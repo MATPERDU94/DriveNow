@@ -1,0 +1,21 @@
+viatura_id,matricula,marca,modelo,categoria,ano,lugares,combustivel,transmissao,preco_dia,preco_de_entrada,quilometragem,estado,hub_id
+V001,12-AB-34,Tesla,Model 3,Elétrico,2023,5,Elétrico,Automática,89.00,500,12500,DISPONIVEL,H01
+V002,56-CD-78,Tesla,Model Y,Elétrico,2023,5,Elétrico,Automática,99.00,500,9800,DISPONIVEL,H02
+V003,90-EF-12,Nissan,Leaf,Elétrico,2022,5,Elétrico,Automática,59.00,0,22000,DISPONIVEL,H03
+V004,34-GH-56,Renault,Zoe,Elétrico,2022,5,Elétrico,Automática,55.00,0,18500,DISPONIVEL,H04
+V005,78-IJ-90,BMW,i3,Elétrico,2021,4,Elétrico,Automática,65.00,500,27000,DISPONIVEL,H05
+V006,11-KL-22,Hyundai,Kona Electric,Elétrico,2023,5,Elétrico,Automática,75.00,500,11200,DISPONIVEL,H01
+V007,33-MN-44,Kia,e-Niro,Elétrico,2023,5,Elétrico,Automática,72.00,500,13400,DISPONIVEL,H02
+V008,55-OP-66,Volkswagen,ID.3,Elétrico,2023,5,Elétrico,Automática,78.00,500,8900,DISPONIVEL,H03
+V009,77-QR-88,Volkswagen,ID.4,Elétrico,2023,5,Elétrico,Automática,88.00,500,10500,DISPONIVEL,H04
+V010,99-ST-00,Peugeot,e-208,Elétrico,2022,5,Elétrico,Automática,58.00,0,19800,DISPONIVEL,H05
+V011,22-UV-11,Opel,Corsa-e,Elétrico,2022,5,Elétrico,Automática,57.00,0,21000,DISPONIVEL,H01
+V012,44-WX-33,MG,ZS EV,Elétrico,2023,5,Elétrico,Automática,68.00,500,14200,DISPONIVEL,H02
+V013,66-YZ-55,Audi,Q4 e-tron,Elétrico,2023,5,Elétrico,Automática,105.00,1000,7600,DISPONIVEL,H03
+V014,88-AA-77,Mercedes-Benz,EQA,Elétrico,2023,5,Elétrico,Automática,110.00,1000,6900,DISPONIVEL,H04
+V015,10-BB-99,Polestar,2,Elétrico,2023,5,Elétrico,Automática,95.00,500,8300,DISPONIVEL,H05
+V016,13-CC-21,Cupra,Born,Elétrico,2023,5,Elétrico,Automática,82.00,500,9100,DISPONIVEL,H01
+V017,35-DD-43,Fiat,500e,Elétrico,2022,4,Elétrico,Automática,52.00,0,17000,DISPONIVEL,H02
+V018,57-EE-65,Smart,EQ Fortwo,Elétrico,2021,2,Elétrico,Automática,45.00,0,24000,DISPONIVEL,H03
+V019,79-FF-87,Tesla,Model S,Elétrico,2023,5,Elétrico,Automática,130.00,1000,5400,DISPONIVEL,H04
+V020,91-GG-09,Tesla,Model X,Elétrico,2023,7,Elétrico,Automática,145.00,1000,4800,DISPONIVEL,H05
