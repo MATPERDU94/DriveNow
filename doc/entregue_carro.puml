@@ -1,0 +1,73 @@
+@startuml
+title Devolução do Carro no Stand (Hub)
+
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam activity {
+  BackgroundColor #F7F5FF
+  BorderColor #553C9A
+}
+
+|Cliente|
+start
+:Chega ao hub com o carro;
+:Entrega o carro e as chaves\nao funcionário do hub;
+
+|Funcionário do Hub|
+:Pesquisa a reserva\n(código da reserva / matrícula);
+
+|Sistema (Backend)|
+:Apresenta os dados da reserva\n(cliente, carro, hora de fim prevista);
+
+|Funcionário do Hub|
+:Inspeciona o veículo\n(estado exterior e interior, limpeza);
+:Regista km finais e nível de combustível;
+
+if (Foram detetados danos?) then (sim)
+  :Regista os danos e tira fotografias;
+  |Sistema (Backend)|
+  :Cria registo de ocorrência\nassociado à reserva;
+else (não)
+endif
+
+|Sistema (Backend)|
+:Regista data/hora real da devolução;
+:Calcula custos adicionais\n(atraso, km excedentes,\ncombustível em falta, danos);
+
+if (Existem custos adicionais?) then (sim)
+  :Gera cobrança adicional;
+  :Debita o método de pagamento\nutilizado na reserva;
+  :Atualiza a fatura com os extras;
+else (não)
+endif
+
+|Base de Dados|
+:Inicia transação;
+:Atualiza RESERVA\n(estado = "CONCLUÍDA", hora real de devolução);
+:Atualiza o carro\n(km, combustível, hub atual,\nestado = "DISPONÍVEL");
+:Remove o bloqueio do carro\n(se devolvido antes do fim previsto,\nlibera o tempo restante);
+:Regista pagamento extra e fatura final\n(se aplicável);
+:Confirma transação (COMMIT);
+
+|Sistema (Backend)|
+:Liberta a caução ao cliente\n(ou desconta os danos, se existirem);
+
+fork
+  :Envia email ao cliente\n(resumo da devolução + fatura final);
+fork again
+  :Atualiza a Dashboard do cliente\n(reserva movida para o histórico);
+fork again
+  :Marca o carro como disponível\npara novas reservas no hub;
+end fork
+
+|Cliente|
+:Recebe o email com o resumo\ne a fatura final;
+
+if (Quer avaliar a experiência?) then (sim)
+  :Submete avaliação do serviço;
+else (não)
+endif
+
+stop
+
+@enduml

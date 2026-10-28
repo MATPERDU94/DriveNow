@@ -1,0 +1,37 @@
+@startuml
+title Registo de Reserva e Bloqueio do Carro (pós-pagamento)
+
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam activity {
+  BackgroundColor #FFF8F0
+  BorderColor #C05621
+}
+
+|Sistema (Backend)|
+start
+:Recebe confirmação de pagamento aprovado;
+
+|Base de Dados|
+:Obtém dados da reserva pendente\n(cliente, carro, hub, data/hora início e fim, preço);
+:Inicia transação;
+:Cria registo na tabela RESERVA\n(estado = "CONFIRMADA");
+:Gera código único da reserva;
+:Bloqueia o carro no intervalo\n(regista em BLOQUEIO / DISPONIBILIDADE\ncarro_id, início, fim, reserva_id);
+:Regista o pagamento na tabela PAGAMENTO\n(reserva_id, método, valor, estado);
+:Gera fatura na tabela FATURA\n(NIF, morada, valor);
+:Confirma transação (COMMIT);
+
+|Sistema (Backend)|
+:Associa reserva ao histórico do cliente;
+
+fork 
+  :Atualiza a Dashboard do cliente\n(reserva ativa);
+fork again
+  :Notifica o hub de partida\n(preparar o veículo);
+end fork
+
+
+stop
+
+@enduml
