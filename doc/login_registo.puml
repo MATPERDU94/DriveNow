@@ -1,0 +1,74 @@
+@startuml
+title Fluxo do Site - Da página inicial à Dashboard
+
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam activity {
+  BackgroundColor #F5F9FF
+  BorderColor #2B6CB0
+}
+
+|Cliente|
+start
+:Acede à página inicial do site;
+:Clica no botão "Login" (barra superior);
+
+|Sistema|
+:Apresenta página de autenticação;
+
+|Cliente|
+if (Já tem conta?) then (sim)
+  :Insere email e password;
+  
+  |Sistema|
+  :Valida credenciais;
+  
+  if (Credenciais válidas?) then (sim)
+  else (não)
+    :Mostra mensagem de erro;
+    |Cliente|
+    if (Esqueceu a password?) then (sim)
+      :Clica em "Esqueci-me da password";
+      |Sistema|
+      :Envia email com link de recuperação;
+      |Cliente|
+      :Define nova password;
+    else (não)
+      :Volta a inserir credenciais;
+    endif
+    |Sistema|
+    :Valida credenciais;
+  endif
+
+else (não)
+  :Clica em "Criar conta";
+  :Preenche formulário de registo\n(nome, email, telemóvel, password,\ncarta de condução, aceita termos);
+  
+  |Sistema|
+  :Valida dados do formulário;
+  
+  if (Dados válidos e email único?) then (sim)
+    :Cria conta;
+    :Envia email de verificação;
+    |Cliente|
+    :Clica no link de verificação;
+    |Sistema|
+    :Ativa a conta;
+  else (não)
+    :Mostra erros no formulário;
+    |Cliente|
+    :Corrige os dados;
+    |Sistema|
+    :Valida novamente;
+  endif
+endif
+
+|Sistema|
+:Cria sessão do utilizador;
+:Redireciona para a Dashboard;
+
+|Cliente|
+:Visualiza a Dashboard\n(reservas, histórico, perfil, nova reserva);
+stop
+
+@enduml

@@ -1,0 +1,80 @@
+@startuml
+title Processo de Aluguer de Carro
+
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam activity {
+  BackgroundColor #F5FFF7
+  BorderColor #2F855A
+}
+
+|Cliente|
+start
+:Clica em "Reservar";
+
+|Sistema|
+:Apresenta lista de hubs de partida;
+
+|Cliente|
+:Escolhe o hub de partida\n(ex.: Guimarães);
+:Escolhe o intervalo de horas\n(data/hora início e fim);
+
+|Sistema|
+:Pesquisa carros disponíveis\nno hub e intervalo selecionados;
+
+if (Existem carros disponíveis?) then (sim)
+  :Apresenta lista de carros com:\n- Preço/hora\n- Preço de entrada\n- Km incluídos\n- Combustível\n- Data/disponibilidade;
+else (não)
+  :Informa que não há carros disponíveis;
+  |Cliente|
+  :Altera hub ou intervalo de horas;
+  |Sistema|
+  :Repete pesquisa;
+  stop
+endif
+
+|Cliente|
+:Escolhe o carro pretendido;
+
+|Sistema|
+:Apresenta página detalhada do carro:\n- Todas as informações do veículo\n- Condições de aluguer\n- Caução / seguro\n- Resumo do preço total;
+
+|Cliente|
+if (Aceita as condições?) then (sim)
+  :Clica em "Confirmar";
+else (não)
+  :Volta à lista de carros;
+  stop
+endif
+
+|Sistema|
+:Apresenta página de pagamento e faturação;
+
+|Cliente|
+:Escolhe método de pagamento\n(cartão, MB Way, PayPal, ...);
+:Insere dados de faturação\n(nome, NIF, morada);
+:Confirma o pagamento;
+
+|Sistema|
+:Processa pagamento;
+
+if (Pagamento aprovado?) then (sim)
+  :Regista a reserva;
+  :Bloqueia o carro no intervalo escolhido;
+  :Apresenta página "Reserva concluída"\n(resumo + código da reserva);
+  fork
+    :Envia email de confirmação\n(detalhes + fatura);
+  fork again
+    :Atualiza a Dashboard do cliente;
+  end fork
+  |Cliente|
+  :Recebe o email de confirmação;
+  stop
+else (não)
+  :Informa que o pagamento falhou;
+  |Cliente|
+  :Escolhe outro método ou tenta novamente;
+  stop
+endif
+
+@enduml
