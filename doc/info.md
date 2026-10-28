@@ -1,0 +1,3 @@
+- Rever entregue_carro : ver melhor a parte das cobranças, etc...
+- no resgisto reserva rever
+- criar uma parte onde o cliente vai buscar o carro (no site pagar os outros 50)

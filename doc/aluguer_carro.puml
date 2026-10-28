@@ -38,9 +38,10 @@ endif
 
 |Sistema|
 :Apresenta página detalhada do carro:\n- Todas as informações do veículo\n- Condições de aluguer\n- Caução / seguro\n- Resumo do preço total;
+:Calcula o valor da reserva:\n- Total do aluguer\n- 50% a pagar agora (sinal)\n- 50% a pagar no levantamento do carro;
 
 |Cliente|
-if (Aceita as condições?) then (sim)
+if (Aceita as condições e o pagamento\nde 50% na reserva?) then (sim)
   :Clica em "Confirmar";
 else (não)
   :Volta à lista de carros;
@@ -48,24 +49,24 @@ else (não)
 endif
 
 |Sistema|
-:Apresenta página de pagamento e faturação;
+:Apresenta página de pagamento e faturação\n(valor a pagar agora = 50% do total);
 
 |Cliente|
 :Escolhe método de pagamento\n(cartão, MB Way, PayPal, ...);
 :Insere dados de faturação\n(nome, NIF, morada);
-:Confirma o pagamento;
+:Confirma o pagamento dos 50%;
 
 |Sistema|
-:Processa pagamento;
+:Processa pagamento de 50% do valor total;
 
 if (Pagamento aprovado?) then (sim)
-  :Regista a reserva;
+  :Regista a reserva\n(estado = "CONFIRMADA",\n50% pago, 50% pendente);
   :Bloqueia o carro no intervalo escolhido;
-  :Apresenta página "Reserva concluída"\n(resumo + código da reserva);
+  :Apresenta página "Reserva concluída"\n(resumo + código da reserva +\nvalor pago + valor a pagar no levantamento);
   fork
-    :Envia email de confirmação\n(detalhes + fatura);
+    :Envia email de confirmação\n(detalhes + fatura/recibo do sinal\n+ valor pendente de 50%);
   fork again
-    :Atualiza a Dashboard do cliente;
+    :Atualiza a Dashboard do cliente\n(reserva ativa, 50% pendente);
   end fork
   |Cliente|
   :Recebe o email de confirmação;

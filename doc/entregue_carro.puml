@@ -10,47 +10,42 @@ skinparam activity {
 
 |Cliente|
 start
-:Chega ao hub com o carro;
-:Entrega o carro e as chaves\nao funcionário do hub;
-
-|Funcionário do Hub|
-:Pesquisa a reserva\n(código da reserva / matrícula);
+:Estaciona o carro no stand do hub;
+:Abre a aplicação e seleciona\na reserva ativa;
+:Clica em "Confirmar entrega do veículo";
 
 |Sistema (Backend)|
-:Apresenta os dados da reserva\n(cliente, carro, hora de fim prevista);
-
-|Funcionário do Hub|
-:Inspeciona o veículo\n(estado exterior e interior, limpeza);
+:Confirma a entregue;
 :Regista km finais e nível de combustível;
+:Compara hora real de entrega\ncom hora de fim da reserva;
 
-if (Foram detetados danos?) then (sim)
-  :Regista os danos e tira fotografias;
-  |Sistema (Backend)|
-  :Cria registo de ocorrência\nassociado à reserva;
+if (Entregou depois da hora de fim?) then (sim)
+  :Calcula o atraso em escalões de 15 min\n(cada escalão iniciado conta):\n- até 15 min: 25% do preço/hora\n- até 30 min: 50% do preço/hora\n- até 45 min: 75% do preço/hora\n- até 1h: 100% do preço/hora\n- acima de 1h: continua a somar 25% por escalão;
+  :Apresenta ao cliente o valor\nda taxa de atraso a pagar;
+
+  |Cliente|
+  repeat
+    :Escolhe método de pagamento\ne paga a taxa de atraso;
+
+    |Sistema (Backend)|
+    :Processa pagamento da taxa;
+  repeat while (Pagamento recusado?) is (sim) not (não)
+
+  :Emite fatura/recibo da taxa de atraso;
 else (não)
-endif
-
-|Sistema (Backend)|
-:Regista data/hora real da devolução;
-:Calcula custos adicionais\n(atraso, km excedentes,\ncombustível em falta, danos);
-
-if (Existem custos adicionais?) then (sim)
-  :Gera cobrança adicional;
-  :Debita o método de pagamento\nutilizado na reserva;
-  :Atualiza a fatura com os extras;
-else (não)
+  :Sem custos adicionais;
 endif
 
 |Base de Dados|
 :Inicia transação;
-:Atualiza RESERVA\n(estado = "CONCLUÍDA", hora real de devolução);
+:Atualiza RESERVA\n(estado = "CONCLUÍDA", hora real de entrega);
 :Atualiza o carro\n(km, combustível, hub atual,\nestado = "DISPONÍVEL");
-:Remove o bloqueio do carro\n(se devolvido antes do fim previsto,\nlibera o tempo restante);
-:Regista pagamento extra e fatura final\n(se aplicável);
+:Remove o bloqueio do carro\n(se entregue antes do fim previsto,\nlibera o tempo restante);
+:Regista pagamento da taxa de atraso\ne fatura final (se aplicável);
 :Confirma transação (COMMIT);
 
 |Sistema (Backend)|
-:Liberta a caução ao cliente\n(ou desconta os danos, se existirem);
+:Liberta a caução ao cliente;
 
 fork
   :Envia email ao cliente\n(resumo da devolução + fatura final);
@@ -61,7 +56,7 @@ fork again
 end fork
 
 |Cliente|
-:Recebe o email com o resumo\ne a fatura final;
+:Recebe o email com o resumo\ne vê a reserva concluída na app;
 
 if (Quer avaliar a experiência?) then (sim)
   :Submete avaliação do serviço;
