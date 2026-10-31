@@ -12,6 +12,7 @@ skinparam activity {
 start
 :Estaciona o carro no stand do hub;
 :Abre a aplicação e seleciona\na reserva ativa;
+:Insira os km finais e nível de combustível;
 :Clica em "Confirmar entrega do veículo";
 
 |Sistema (Backend)|
@@ -37,15 +38,31 @@ else (não)
 endif
 
 |Base de Dados|
-:Inicia transação;
-:Atualiza RESERVA\n(estado = "CONCLUÍDA", hora real de entrega);
-:Atualiza o carro\n(km, combustível, hub atual,\nestado = "DISPONÍVEL");
-:Remove o bloqueio do carro\n(se entregue antes do fim previsto,\nlibera o tempo restante);
+:Atualiza RESERVA:\n(estado = "CONCLUÍDA", hora real de entrega);
+:Atualiza o CARRO:\n(km, combustível, hub atual,\nestado = "DISPONÍVEL");
+:Remove o bloqueio do carro:\n(se entregue antes do fim previsto,\nlibera o tempo restante);
 :Regista pagamento da taxa de atraso\ne fatura final (se aplicável);
 :Confirma transação (COMMIT);
 
 |Sistema (Backend)|
+:Avisa o Staff do hub que o carro foi devolvido;
+:sujeito a inspeção do carro (se aplicável);
+if (Carro devolvido com danos?) then (sim)
+  :cliente notivicado do valor da reparação;
+  |Base de Dados|
+  :Regista os danos e o valor da reparação;
+  |Cliente|
+  repeat
+  :Escolhe método de pagamento da reparação e paga;
+  |Sistema (Backend)|
+  :Processa pagamento da reparação;
+  repeat while (Pagamento recusado?) is (sim) not (não)
+  |Sistema (Backend)|
+  :Emite fatura/recibo da reparação;
+else (não)
+|Sistema (Backend)|
 :Liberta a caução ao cliente;
+endif
 
 fork
   :Envia email ao cliente\n(resumo da devolução + fatura final);
@@ -61,6 +78,7 @@ end fork
 if (Quer avaliar a experiência?) then (sim)
   :Submete avaliação do serviço;
 else (não)
+  :Não é necessário avaliar a experiência;
 endif
 
 stop

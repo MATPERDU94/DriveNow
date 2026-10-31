@@ -1,5 +1,5 @@
 @startuml
-title Processo de Aluguer de Carro
+title Processo de Aluguer de Carro (Na DashBoard)
 
 skinparam shadowing false
 skinparam defaultFontName Arial
@@ -12,39 +12,44 @@ skinparam activity {
 start
 :Clica em "Reservar";
 
-|Sistema|
-:Apresenta lista de hubs de partida;
-
-|Cliente|
-:Escolhe o hub de partida\n(ex.: Guimarães);
-:Escolhe o intervalo de horas\n(data/hora início e fim);
-
-|Sistema|
-:Pesquisa carros disponíveis\nno hub e intervalo selecionados;
-
-if (Existem carros disponíveis?) then (sim)
-  :Apresenta lista de carros com:\n- Preço/hora\n- Preço de entrada\n- Km incluídos\n- Combustível\n- Data/disponibilidade;
-else (não)
-  :Informa que não há carros disponíveis;
-  |Cliente|
-  :Altera hub ou intervalo de horas;
+repeat
   |Sistema|
-  :Repete pesquisa;
-  stop
-endif
+  :Apresenta lista de hubs de partida;
+
+  |Cliente|
+  :Escolhe o hub de partida\n(ex.: Guimarães);
+  :Escolhe o intervalo de horas\n(data/hora início e fim);
+
+  |Sistema|
+  :Pesquisa carros disponíveis\nno hub e intervalo selecionados;
+
+  if (Existem carros disponíveis?) then (sim)
+    :Apresenta lista de carros disponíveis\nno hub e intervalo selecionados;
+    :Apresenta lista de carros com:\n- Preço/hora\n- Preço de entrada\n- Km incluídos\n- Combustível\n- Data/disponibilidade;
+
+  else (não)
+    :Informa que não há carros disponíveis;
+  endif
+  |Cliente|
+repeat while (Decição do cliente, continuar?) is (não) not (sim)
+  
+
 
 |Cliente|
 :Escolhe o carro pretendido;
+:Clica em "Seguinte" ; 
 
 |Sistema|
-:Apresenta página detalhada do carro:\n- Todas as informações do veículo\n- Condições de aluguer\n- Caução / seguro\n- Resumo do preço total;
+:Sitema abre uma página detalhada do carro selecionado;
+:Apresenta detalhos e modalidades do carro:\n- Todas as informações do veículo\n- Condições de aluguer\n- Caução / seguro\n- Resumo do preço total;
 :Calcula o valor da reserva:\n- Total do aluguer\n- 50% a pagar agora (sinal)\n- 50% a pagar no levantamento do carro;
 
 |Cliente|
-if (Aceita as condições e o pagamento\nde 50% na reserva?) then (sim)
-  :Clica em "Confirmar";
+:Cliente vé os detalhes do carro, condições de aluguer e pagamento;
+if (Continuar?) then (sim)
+  :Clica em "Continuar";
 else (não)
-  :Volta à lista de carros;
+  :Cancela a reserva;
   stop
 endif
 
@@ -52,29 +57,30 @@ endif
 :Apresenta página de pagamento e faturação\n(valor a pagar agora = 50% do total);
 
 |Cliente|
-:Escolhe método de pagamento\n(cartão, MB Way, PayPal, ...);
 :Insere dados de faturação\n(nome, NIF, morada);
+:Escolhe método de pagamento\n(cartão, MB Way, PayPal, ...);
 :Confirma o pagamento dos 50%;
 
 |Sistema|
 :Processa pagamento de 50% do valor total;
 
-if (Pagamento aprovado?) then (sim)
-  :Regista a reserva\n(estado = "CONFIRMADA",\n50% pago, 50% pendente);
+if (Pagamento aprovado?) then (não)
+  :Informa que o pagamento falhou;
+  :Operação cancelada;
+  stop
+else (sim)
+  :Avisa que o pagamento foi aprovado;
   :Bloqueia o carro no intervalo escolhido;
   :Apresenta página "Reserva concluída"\n(resumo + código da reserva +\nvalor pago + valor a pagar no levantamento);
   fork
     :Envia email de confirmação\n(detalhes + fatura/recibo do sinal\n+ valor pendente de 50%);
   fork again
+    :Regista a reserva\n(estado = "CONFIRMADA",\n50% pago, 50% pendente);
+  fork again
     :Atualiza a Dashboard do cliente\n(reserva ativa, 50% pendente);
   end fork
   |Cliente|
   :Recebe o email de confirmação;
-  stop
-else (não)
-  :Informa que o pagamento falhou;
-  |Cliente|
-  :Escolhe outro método ou tenta novamente;
   stop
 endif
 

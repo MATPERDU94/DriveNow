@@ -11,22 +11,23 @@ skinparam activity {
 |Sistema (Backend)|
 start
 :Recebe confirmação de pagamento aprovado;
+:Gera código único da reserva (reserva_id);
+:Recebe dados da reserva pendente (cliente, carro, hub, data/hora início e fim, preço);
 
 |Base de Dados|
-:Obtém dados da reserva pendente\n(cliente, carro, hub, data/hora início e fim, preço);
-:Inicia transação;
+:Obtém dados da reserva pendente\n(reserva_id, carro, hub, data/hora início e fim, preço);
 :Cria registo na tabela RESERVA\n(estado = "CONFIRMADA");
-:Gera código único da reserva;
 :Bloqueia o carro no intervalo\n(regista em BLOQUEIO / DISPONIBILIDADE\ncarro_id, início, fim, reserva_id);
 :Regista o pagamento na tabela PAGAMENTO\n(reserva_id, método, valor, estado);
-:Gera fatura na tabela FATURA\n(NIF, morada, valor);
-:Confirma transação (COMMIT);
 
 |Sistema (Backend)|
+:Gera os dados para a fatura ;
 :Associa reserva ao histórico do cliente;
 
 fork 
   :Atualiza a Dashboard do cliente\n(reserva ativa);
+fork again
+  :Envia notificação ao cliente\n(com código da reserva, fatura e detalhes da reserva);
 fork again
   :Notifica o hub de partida\n(preparar o veículo);
 end fork
