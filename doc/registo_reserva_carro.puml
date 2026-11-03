@@ -1,5 +1,5 @@
 @startuml
-title Registo de Reserva e Bloqueio do Carro (pós-pagamento)
+title Registo de Reserva e Bloqueio do Carro (Backend/BD)
 
 skinparam shadowing false
 skinparam defaultFontName Arial

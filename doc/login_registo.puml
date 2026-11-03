@@ -1,5 +1,5 @@
 @startuml
-title Fluxo do Site - Da página inicial à Dashboard
+title Fluxo Login
 
 skinparam shadowing false
 skinparam defaultFontName Arial
