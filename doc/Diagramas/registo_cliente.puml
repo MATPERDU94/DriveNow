@@ -1,0 +1,46 @@
+@startuml 1 - Registo do Cliente
+title DriveNow - 1. Registo do cliente
+
+|Cliente|
+|App DriveNow|
+|SAP|
+|Moloni|
+
+|Cliente|
+start
+:Abrir a app e escolher "Criar conta";
+
+repeat
+  |Cliente|
+  :Preencher dados\n(nome, email, NIF, password);
+  |App DriveNow|
+  :Validar dados e NIF;
+repeat while (Dados válidos?) is (não) not (sim)
+
+repeat
+  |Cliente|
+  :Associar cartão ou conta bancária;
+  |App DriveNow|
+  :Validar meio de pagamento;
+repeat while (Meio de pagamento válido?) is (não) not (sim)
+
+|App DriveNow|
+:Guardar utilizador na base de dados;
+
+fork
+  |SAP|
+  :Criar Business Partner;
+fork again
+  |Moloni|
+  :Criar cliente\n(nome, NIF, email);
+end fork
+
+|App DriveNow|
+:Guardar IDs do SAP e do Moloni;
+:Ativar conta;
+
+|Cliente|
+:Receber confirmação da conta;
+stop
+
+@enduml

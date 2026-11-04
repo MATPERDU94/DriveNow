@@ -1,0 +1,47 @@
+@startuml 3 - Pagamento e Faturação
+title DriveNow - 3. Pagamento e faturação
+
+|Cliente|
+|App DriveNow|
+|SAP|
+|Moloni|
+
+|App DriveNow|
+start
+:Receber duração da reserva;
+:Calcular preço\n(minutos × preço por minuto + valor de entrada);
+
+repeat
+  |App DriveNow|
+  :Cobrar meio de pagamento associado;
+  if (Pagamento aprovado?) then (sim)
+  else (não)
+    :Registar dívida pendente\ne bloquear novas reservas;
+    |Cliente|
+    :Atualizar meio de pagamento;
+  endif
+  |App DriveNow|
+repeat while (Pagamento em falta?) is (sim) not (não)
+
+|SAP|
+:Registar venda (Sales Order);
+
+repeat
+  |Moloni|
+  :Emitir fatura-recibo;
+  |App DriveNow|
+  :Verificar resposta do Moloni;
+  backward:Marcar "pendente de faturação"\ne tentar de novo mais tarde;
+repeat while (Fatura emitida?) is (não) not (sim)
+
+|Moloni|
+:Disponibilizar PDF da fatura;
+
+|App DriveNow|
+:Enviar fatura por email;
+
+|Cliente|
+:Receber fatura;
+stop
+
+@enduml
