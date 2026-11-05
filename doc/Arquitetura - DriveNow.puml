@@ -1,0 +1,88 @@
+@startuml 0 - Arquitetura
+title DriveNow - Arquitetura e integrações
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam defaultTextAlignment left
+skinparam nodesep 40
+skinparam ranksep 60
+
+actor "Cliente" as Cliente
+actor "Gestor de frota" as Gestor
+
+package "DriveNow" {
+  component FE [
+    **Frontend (React)**
+    ----
+    • Registo e login
+    • Mapa com carros disponíveis
+    • Reserva e viagem ativa
+    • Relato do estado do carro
+      (início e fim da viagem)
+    • Resumo, pagamento e faturas
+    • Histórico de viagens
+  ]
+
+  component BE [
+    **Backend (Spring Boot)**
+    ----
+    • API REST para o frontend
+    • Cálculo do preço da viagem
+    • Cobrança e dívidas pendentes
+    • Atribuição de danos e penalizações
+    • Clientes: SapClient,
+      MoloniClient, OdooClient
+  ]
+
+  database DB [
+    **Base de dados**
+    ----
+    • Utilizadores e meios de pagamento
+    • IDs do SAP e do Moloni
+    • Reservas e viagens
+    • Relatos de início e fim
+  ]
+}
+
+package "ERP" {
+  component SAP [
+    **SAP**
+    ----
+    • Business Partner (cliente)
+    • Dados da frota
+    • Vendas: viagens e
+      penalizações (Sales Order)
+  ]
+
+  component MOL [
+    **Moloni**
+    ----
+    • Clientes fiscais (nome, NIF)
+    • Faturas-recibo
+      (viagens e penalizações)
+    • PDF das faturas
+  ]
+
+  component ODOO [
+    **Odoo**
+    ----
+    • Carros indisponíveis
+    • Registo de danos
+    • Tabela de custos de danos
+    • Quilometragem dos carros
+    • Documentação (seguro,
+      inspeção periódica, IUC)
+  ]
+}
+
+Cliente --> FE : usa a app
+FE --> BE : pedidos REST
+BE --> DB : lê e grava
+
+BE --> SAP : criar cliente,\nler frota,\nregistar vendas
+BE --> MOL : criar cliente,\nemitir faturas,\nobter PDF
+BE --> ODOO : ler carros indisponíveis,\nregistar danos e quilometragem,\nobter custos
+
+Gestor --> ODOO : renova documentos
+
+@enduml

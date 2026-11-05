@@ -1,0 +1,73 @@
+@startuml 2 - Reserva e Viagem
+title DriveNow - 2. Reserva e viagem
+
+|Cliente|
+|App DriveNow|
+|SAP|
+|Odoo|
+
+|Cliente|
+start
+:Fazer login na app;
+
+|App DriveNow|
+:Obter localização do cliente;
+
+fork
+  |SAP|
+  :Devolver dados da frota;
+fork again
+  |Odoo|
+  :Devolver carros indisponíveis;
+end fork
+
+|App DriveNow|
+:Excluir carros indisponíveis;
+:Calcular carros mais próximos;
+
+repeat
+  :Mostrar carros no mapa;
+  backward:Aguardar e atualizar o mapa;
+repeat while (Há carro disponível?) is (não) not (sim)
+
+|Cliente|
+:Escolher carro e reservar;
+
+|App DriveNow|
+:Bloquear carro;
+:Iniciar temporizador;
+
+|Cliente|
+if (Cancelar reserva?) then (não)
+  :Indicar o estado do carro antes da viagem\n("sem danos" ou tipo de dano + descrição);
+  |App DriveNow|
+  :Guardar relato de início\nassociado à viagem;
+  if (Dano reportado?) then (sim)
+    :Iniciar processo de danos (diagrama 4);
+  endif
+
+  |Cliente|
+  :Desbloquear carro e conduzir;
+  :Terminar viagem na app;
+  :Indicar o estado do carro no fim da viagem\n("sem danos" ou tipo de dano + descrição);
+
+  |App DriveNow|
+  :Guardar relato de fim\nassociado à viagem;
+  if (Dano reportado?) then (sim)
+    :Iniciar processo de danos (diagrama 4);
+  endif
+  :Ler quilometragem do carro;
+
+  |Odoo|
+  :Atualizar quilometragem do carro;
+else (sim)
+endif
+
+|App DriveNow|
+:Parar temporizador;
+:Libertar carro\n(guardar localização final);
+:Guardar duração da reserva;
+:Iniciar processo de pagamento;
+stop
+
+@enduml

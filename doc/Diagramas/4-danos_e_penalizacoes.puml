@@ -1,0 +1,72 @@
+@startuml 4 - Danos e Penalizações
+title DriveNow - 4. Danos e penalizações
+
+|App DriveNow|
+|Odoo|
+|Cliente|
+|SAP|
+|Moloni|
+
+|App DriveNow|
+start
+:Receber relato com dano\n(fim da viagem ou início da viagem seguinte);
+
+if (Dano já registado?) then (sim)
+  :Ignorar\n(dano já tratado);
+else (não)
+  :Identificar o responsável\n(quem o reportou no fim da viagem,\nou o condutor anterior se reportado no início);
+
+  |Odoo|
+  :Registar o dano\n(tipo de dano e descrição);
+  :Obter o custo da tabela de danos;
+  :Marcar o carro como indisponível\n(após a viagem em curso);
+
+  |App DriveNow|
+  :Calcular penalização\n(custo da tabela, até ao limite da franquia);
+
+  fork
+    |Cliente|
+    :Receber notificação com descrição e valor;
+
+    repeat
+      |App DriveNow|
+      :Cobrar meio de pagamento associado;
+      if (Pagamento aprovado?) then (sim)
+      else (não)
+        :Registar dívida pendente\ne bloquear novas reservas;
+        |Cliente|
+        :Atualizar meio de pagamento;
+      endif
+      |App DriveNow|
+    repeat while (Pagamento em falta?) is (sim) not (não)
+
+    |SAP|
+    :Registar venda da penalização (Sales Order);
+
+    repeat
+      |Moloni|
+      :Emitir fatura-recibo da penalização;
+      |App DriveNow|
+      :Verificar resposta do Moloni;
+      backward:Marcar "pendente de faturação"\ne tentar de novo mais tarde;
+    repeat while (Fatura emitida?) is (não) not (sim)
+
+    |Moloni|
+    :Disponibilizar PDF da fatura;
+
+    |App DriveNow|
+    :Enviar fatura por email;
+
+    |Cliente|
+    :Receber fatura;
+  fork again
+    |Odoo|
+    :Reparar o carro;
+    :Concluir registo de manutenção;
+    :Marcar o carro como disponível;
+  end fork
+endif
+
+stop
+
+@enduml

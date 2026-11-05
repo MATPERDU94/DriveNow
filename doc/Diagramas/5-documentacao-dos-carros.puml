@@ -1,0 +1,39 @@
+@startuml 5 - Documentação dos Carros
+title DriveNow - 5. Documentação dos carros (Seguro, inspeção, IUC...)
+
+|Odoo|
+|Gestor de frota|
+|App DriveNow|
+
+|Odoo|
+start
+:Verificar diariamente a validade dos documentos\n(seguro, inspeção periódica, IUC);
+
+if (Algum documento expira\nnos próximos 30 dias?) then (sim)
+  :Alertar o gestor de frota;
+
+  |Gestor de frota|
+  if (Renovado antes de expirar? \n (Seguro, inspeção, IUC...)) then (sim)
+    :Renovar o documento;
+    |Odoo|
+    :Atualizar a data de validade;
+  else (não)
+    |Odoo|
+    :Marcar o carro como indisponível\n(documentação expirada);
+    |App DriveNow|
+    :Deixar de mostrar o carro no mapa;
+
+    |Gestor de frota|
+    :Renovar o documento;
+    |Odoo|
+    :Atualizar a data de validade;
+    :Marcar o carro como disponível;
+    |App DriveNow|
+    :Voltar a mostrar o carro no mapa;
+  endif
+else (não)
+endif
+
+stop
+
+@enduml
