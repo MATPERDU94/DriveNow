@@ -31,7 +31,8 @@ public class FrotaService {
 
     private static final String MODELO = "fleet.vehicle";
     private static final List<String> CAMPOS = List.of(
-            "license_plate", "model_id", "model_year", "seats", "odometer", "state_id");
+            "license_plate", "model_id", "model_year", "seats", "odometer", "state_id",
+            "entry_fee", "price_per_minute");
     private static final Set<EstadoReserva> ATIVAS = EnumSet.of(EstadoReserva.RESERVADA, EstadoReserva.EM_CURSO);
 
     private final OdooClient odoo;
@@ -83,6 +84,11 @@ public class FrotaService {
                 .map(v -> completar(v, localizacao.daViatura(id).orElse(null), reservadas, null, null));
     }
 
+    /** Regista no Odoo a quilometragem da viatura (fleet.vehicle.odometer). */
+    public void registarQuilometragem(long viaturaId, double km) {
+        odoo.create("fleet.vehicle.odometer", Map.of("vehicle_id", viaturaId, "value", km));
+    }
+
     /** Só os dados do Odoo, sem posição nem disponibilidade. */
     public List<ViaturaDto> listarDoOdoo() {
         return odoo.searchRead(MODELO, List.of(), CAMPOS, "license_plate").stream()
@@ -109,6 +115,8 @@ public class FrotaService {
                 inteiro(r.get("seats")),
                 numero(r.get("odometer")),
                 nomeDe(r.get("state_id")),
+                numero(r.get("entry_fee")),
+                numero(r.get("price_per_minute")),
                 null, null, true, null);
     }
 }

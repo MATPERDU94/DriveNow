@@ -1,5 +1,6 @@
 package pt.drivenow.reservas;
 
+import java.math.BigDecimal;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -42,7 +43,13 @@ public class ReservaService {
         if (reservas.existsByViaturaOdooIdAndEstadoIn(viaturaId, ATIVAS)) {
             throw new RegraNegocioException("A viatura " + viatura.matricula() + " já está reservada");
         }
-        return ReservaDto.de(reservas.save(new Reserva(utilizador, viaturaId, viatura.matricula())));
+        if (viatura.precoMinuto() == null || viatura.precoMinuto() <= 0) {
+            throw new RegraNegocioException("A viatura " + viatura.matricula()
+                    + " ainda não tem preço por minuto definido no Odoo (Frota → Tarifário)");
+        }
+        BigDecimal taxa = BigDecimal.valueOf(viatura.taxaEntrada() != null ? viatura.taxaEntrada() : 0);
+        BigDecimal porMinuto = BigDecimal.valueOf(viatura.precoMinuto());
+        return ReservaDto.de(reservas.save(new Reserva(utilizador, viaturaId, viatura.matricula(), taxa, porMinuto)));
     }
 
     @Transactional(readOnly = true)
@@ -60,6 +67,7 @@ public class ReservaService {
         Reserva r = buscar(id);
         if (r.getEstado() != EstadoReserva.RESERVADA) {
             throw new RegraNegocioException("Só é possível cancelar reservas que ainda não começaram");
+            // Nota: a taxa de entrada não é devolvida ao cancelar.
         }
         r.cancelar();
         return ReservaDto.de(r);

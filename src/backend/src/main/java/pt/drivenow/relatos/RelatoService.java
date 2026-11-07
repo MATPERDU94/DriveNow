@@ -12,6 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 import pt.drivenow.common.RegraNegocioException;
 import pt.drivenow.danos.DanoService;
 import pt.drivenow.danos.TipoDanoDto;
+import pt.drivenow.frota.FrotaService;
+import pt.drivenow.frota.ViaturaDto;
 import pt.drivenow.localizacao.LocalizacaoService;
 import pt.drivenow.reservas.EstadoReserva;
 import pt.drivenow.reservas.Reserva;
@@ -34,18 +36,20 @@ public class RelatoService {
     private final ReservaService reservas;
     private final DanoService danos;
     private final LocalizacaoService localizacao;
+    private final FrotaService frota;
 
     public RelatoService(RelatoRepository relatos, ReservaService reservas, DanoService danos,
-            LocalizacaoService localizacao) {
+            LocalizacaoService localizacao, FrotaService frota) {
         this.relatos = relatos;
         this.reservas = reservas;
         this.danos = danos;
         this.localizacao = localizacao;
+        this.frota = frota;
     }
 
     @Transactional
     public RelatoDto criar(long reservaId, TipoRelato tipo, String observacoes, List<DanoReportado> reportados,
-            Double latitude, Double longitude) {
+            Double latitude, Double longitude, Double quilometragem) {
         Reserva reserva = reservas.buscar(reservaId);
         validarEstado(reserva, tipo);
         if (tipo == TipoRelato.FIM) {
@@ -53,6 +57,9 @@ public class RelatoService {
                 throw new RegraNegocioException("O relato de FIM tem de indicar a latitude e a longitude onde o carro ficou");
             }
             LocalizacaoService.validar(latitude, longitude);
+            if (quilometragem != null) {
+                validarQuilometragem(reserva.getViaturaOdooId(), quilometragem);
+            }
         }
         if (relatos.existsByReservaIdAndTipo(reservaId, tipo)) {
             throw new RegraNegocioException("Esta reserva já tem um relato de " + tipo);
@@ -88,6 +95,9 @@ public class RelatoService {
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
             reserva.terminarViagem(total);
             localizacao.atualizar(reserva.getViaturaOdooId(), latitude, longitude);
+            if (quilometragem != null) {
+                frota.registarQuilometragem(reserva.getViaturaOdooId(), quilometragem);
+            }
         }
         return RelatoDto.de(relato);
     }
@@ -95,6 +105,14 @@ public class RelatoService {
     @Transactional(readOnly = true)
     public List<RelatoDto> daReserva(long reservaId) {
         return relatos.findByReservaIdOrderByCriadoEm(reservaId).stream().map(RelatoDto::de).toList();
+    }
+
+    private void validarQuilometragem(long viaturaId, double km) {
+        Double atual = frota.obter(viaturaId).map(ViaturaDto::quilometragem).orElse(null);
+        if (atual != null && km < atual) {
+            throw new RegraNegocioException("A quilometragem final (" + km
+                    + ") não pode ser inferior à atual (" + atual + ")");
+        }
     }
 
     private static void validarEstado(Reserva reserva, TipoRelato tipo) {

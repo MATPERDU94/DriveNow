@@ -25,7 +25,6 @@
         <field name="domain">[('is_damage', '=', True)]</field>
         <field name="context">{'default_is_damage': True, 'default_category': 'service'}</field>
     </record>
-
     <record id="action_registo_danos" model="ir.actions.act_window">
         <field name="name">Registo de danos</field>
         <field name="res_model">fleet.vehicle.log.services</field>

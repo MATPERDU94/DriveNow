@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_tarifario_list" model="ir.ui.view">
+        <field name="name">drivenow.tarifario.list</field>
+        <field name="model">fleet.vehicle.model</field>
+        <field name="priority">50</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="brand_id"/>
+                <field name="name" string="Modelo"/>
+                <field name="entry_fee"/>
+                <field name="price_per_minute"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_tarifario" model="ir.actions.act_window">
+        <field name="name">Tarifário</field>
+        <field name="res_model">fleet.vehicle.model</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_tarifario_list"/>
+    </record>
+
+    <menuitem id="menu_tarifario" name="Tarifário" parent="fleet.menu_root" action="action_tarifario" sequence="55"/>
+</odoo>

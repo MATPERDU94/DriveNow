@@ -20,16 +20,18 @@ public class RelatoController {
 
     /**
      * Exemplo:
-     * {"tipo": "FIM", "observacoes": "Risco na porta", "latitude": 41.4525, "longitude": -8.2898,
+     * {"tipo": "FIM", "observacoes": "Risco na porta", "latitude": 41.4525, "longitude": -8.2898, "quilometragem": 3912,
      *  "danos": [{"tipoDanoId": 5, "descricao": "porta traseira"}]}
      * A latitude e a longitude (onde o carro ficou estacionado) são obrigatórias no relato de FIM.
+     * A quilometragem é opcional: se vier, é registada no Odoo.
      */
     public record CriarRelatoRequest(
             @NotNull TipoRelato tipo,
             String observacoes,
             List<RelatoService.DanoReportado> danos,
             Double latitude,
-            Double longitude) {
+            Double longitude,
+            Double quilometragem) {
     }
 
     private final RelatoService relatos;
@@ -42,7 +44,7 @@ public class RelatoController {
     @ResponseStatus(HttpStatus.CREATED)
     public RelatoDto criar(@PathVariable long reservaId, @Valid @RequestBody CriarRelatoRequest pedido) {
         return relatos.criar(reservaId, pedido.tipo(), pedido.observacoes(), pedido.danos(),
-                pedido.latitude(), pedido.longitude());
+                pedido.latitude(), pedido.longitude(), pedido.quilometragem());
     }
 
     @GetMapping

@@ -77,12 +77,12 @@ curl -X POST localhost:8080/api/reservas -H "Content-Type: application/json" \
 curl -X POST localhost:8080/api/reservas/1/relatos -H "Content-Type: application/json" \
   -d '{"tipo":"INICIO","observacoes":"Carro limpo","danos":[]}'
 
-# Relato de fim: termina a viagem, guarda onde o carro ficou e cobra os danos novos
-# (tipoDanoId = "id" de /api/danos/tipos)
+# Relato de fim: termina a viagem, guarda onde o carro ficou e a quilometragem,
+# calcula o preço e cobra os danos novos (tipoDanoId = "id" de /api/danos/tipos)
 curl -X POST localhost:8080/api/reservas/1/relatos -H "Content-Type: application/json" \
-  -d '{"tipo":"FIM","observacoes":"Risquei ao estacionar","latitude":41.4525,"longitude":-8.2898,"danos":[{"tipoDanoId":3,"descricao":"porta traseira esquerda"}]}'
+  -d '{"tipo":"FIM","observacoes":"Risquei ao estacionar","latitude":41.4525,"longitude":-8.2898,"quilometragem":3912,"danos":[{"tipoDanoId":3,"descricao":"porta traseira esquerda"}]}'
 
-# Ver a reserva (totalPenalizacoes) e os relatos
+# Ver a reserva (minutos, valorViagem, totalPenalizacoes, total) e os relatos
 curl localhost:8080/api/reservas/1
 curl localhost:8080/api/reservas/1/relatos
 ```
@@ -102,14 +102,26 @@ Depois do relato de fim, o dano aparece no Odoo em **Frota → Danos → Registo
 | GET | `/api/reservas?utilizadorId=1` | Histórico de reservas |
 | GET | `/api/reservas/{id}` | Uma reserva |
 | POST | `/api/reservas/{id}/cancelar` | Cancelar (só antes de começar) |
-| POST | `/api/reservas/{id}/relatos` | Relato `{tipo: INICIO/FIM, observacoes, danos: [{tipoDanoId, descricao}], latitude, longitude}` (coordenadas obrigatórias no FIM) |
+| POST | `/api/reservas/{id}/relatos` | Relato `{tipo: INICIO/FIM, observacoes, danos: [{tipoDanoId, descricao}], latitude, longitude, quilometragem}` (coordenadas obrigatórias no FIM; quilometragem opcional) |
 | GET | `/api/reservas/{id}/relatos` | Relatos da reserva |
+
+## Preço da viagem
+
+```
+total = taxa de entrada + minutos × preço por minuto + penalizações
+```
+
+- Os preços estão no Odoo, por modelo, em **Frota → Tarifário** (ex.: Renault Zoe 10 € + 0,18 €/min; Porsche Taycan 200 € + 0,63 €/min).
+- A **taxa de entrada** é fixada ao reservar e não é devolvida se a reserva for cancelada.
+- Os **minutos** contam do relato de início ao relato de fim; cada minuto começado conta (mínimo 1).
+- Os preços são copiados para a reserva no momento em que é criada: se o tarifário mudar a meio da viagem, o cliente paga o preço que viu.
+- Não é possível reservar uma viatura sem preço por minuto definido no Odoo.
 
 ## Regras implementadas
 
 - Um utilizador só pode ter uma reserva ativa, e uma viatura só pode estar numa reserva ativa.
 - Relato de **início**: só com a reserva em `RESERVADA`; passa a `EM_CURSO`.
-- Relato de **fim**: só com a reserva em `EM_CURSO`; passa a `CONCLUIDA` e a posição da viatura é atualizada com as coordenadas enviadas.
+- Relato de **fim**: só com a reserva em `EM_CURSO`; passa a `CONCLUIDA`, calcula o preço, e a posição da viatura é atualizada com as coordenadas enviadas. Se vier a quilometragem, é registada no Odoo (não pode ser inferior à atual).
 - Não há hubs: cada viatura tem uma posição GPS. No primeiro arranque, as viaturas sem posição ficam distribuídas por 30 pontos de Guimarães.
 - `disponivel` é `false` enquanto a viatura estiver numa reserva ativa.
 - Todos os danos assinalados são registados no Odoo, com o custo da tabela.
@@ -117,10 +129,10 @@ Depois do relato de fim, o dano aparece no Odoo em **Frota → Danos → Registo
 
 ## Próximos passos
 
-- Cálculo do preço da viagem
 - `SapClient` (Business Partner, Sales Order) e `MoloniClient` (faturas-recibo)
 - Autenticação (registo e login)
 - Marcar a viatura como indisponível no Odoo quando um dano a imobiliza
+- Cobrança (meios de pagamento e dívidas pendentes)
 
 ## Comandos úteis
 

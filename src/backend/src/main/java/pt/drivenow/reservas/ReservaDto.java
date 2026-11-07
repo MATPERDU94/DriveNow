@@ -13,7 +13,12 @@ public record ReservaDto(
         Instant criadaEm,
         Instant inicioViagem,
         Instant fimViagem,
-        BigDecimal totalPenalizacoes) {
+        BigDecimal taxaEntrada,
+        BigDecimal precoMinuto,
+        Long minutos,
+        BigDecimal valorViagem,
+        BigDecimal totalPenalizacoes,
+        BigDecimal total) {
 
     public static ReservaDto de(Reserva r) {
         return new ReservaDto(
@@ -26,6 +31,11 @@ public record ReservaDto(
                 r.getCriadaEm(),
                 r.getInicioViagem(),
                 r.getFimViagem(),
-                r.getTotalPenalizacoes());
+                r.getTaxaEntrada(),
+                r.getPrecoMinuto(),
+                r.getMinutos(),
+                r.getValorViagem(),
+                r.getTotalPenalizacoes(),
+                r.getTotal());
     }
 }
