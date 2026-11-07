@@ -1,0 +1,30 @@
+id,name,brand_id/id,vehicle_type,seats,default_fuel_type,transmission
+model_tesla_model_3,Model 3,brand_tesla,car,5,electric,automatic
+model_tesla_model_y,Model Y,brand_tesla,car,5,electric,automatic
+model_nissan_leaf,Leaf,brand_nissan,car,5,electric,automatic
+model_renault_zoe,Zoe,brand_renault,car,5,electric,automatic
+model_bmw_i3,i3,brand_bmw,car,4,electric,automatic
+model_hyundai_kona_electric,Kona Electric,brand_hyundai,car,5,electric,automatic
+model_kia_e_niro,e-Niro,brand_kia,car,5,electric,automatic
+model_volkswagen_id_3,ID.3,brand_volkswagen,car,5,electric,automatic
+model_volkswagen_id_4,ID.4,brand_volkswagen,car,5,electric,automatic
+model_peugeot_e_208,e-208,brand_peugeot,car,5,electric,automatic
+model_opel_corsa_e,Corsa-e,brand_opel,car,5,electric,automatic
+model_mg_zs_ev,ZS EV,brand_mg,car,5,electric,automatic
+model_audi_q4_e_tron,Q4 e-tron,brand_audi,car,5,electric,automatic
+model_mercedes_benz_eqa,EQA,brand_mercedes_benz,car,5,electric,automatic
+model_polestar_2,2,brand_polestar,car,5,electric,automatic
+model_cupra_born,Born,brand_cupra,car,5,electric,automatic
+model_fiat_500e,500e,brand_fiat,car,4,electric,automatic
+model_smart_eq_fortwo,EQ Fortwo,brand_smart,car,2,electric,automatic
+model_tesla_model_s,Model S,brand_tesla,car,5,electric,automatic
+model_tesla_model_x,Model X,brand_tesla,car,7,electric,automatic
+model_porsche_taycan,Taycan,brand_porsche,car,4,electric,automatic
+model_hyundai_ioniq_5,Ioniq 5,brand_hyundai,car,5,electric,automatic
+model_kia_ev6,EV6,brand_kia,car,5,electric,automatic
+model_ford_mustang_mach_e,Mustang Mach-E,brand_ford,car,5,electric,automatic
+model_volvo_ex30,EX30,brand_volvo,car,5,electric,automatic
+model_skoda_enyaq,Enyaq,brand_skoda,car,5,electric,automatic
+model_byd_atto_3,Atto 3,brand_byd,car,5,electric,automatic
+model_bmw_ix1,iX1,brand_bmw,car,5,electric,automatic
+model_dacia_spring,Spring,brand_dacia,car,4,electric,automatic

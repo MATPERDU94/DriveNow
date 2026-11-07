@@ -1,0 +1,17 @@
+id,name,category,is_damage,damage_severity,damage_cost,blocks_vehicle,damage_description
+dano_risco_ligeiro,Risco ligeiro na pintura,service,True,ligeiro,50,False,"Arranhão superficial, até 10 cm."
+dano_risco_profundo,Risco profundo na pintura,service,True,moderado,150,False,Risco que atinge o metal ou com mais de 10 cm.
+dano_amolgadela_pequena,Amolgadela pequena,service,True,moderado,120,False,Mossa até 5 cm sem danos na pintura.
+dano_amolgadela_grande,Amolgadela grande,service,True,grave,350,True,Mossa com mais de 5 cm ou pintura danificada.
+dano_para_choques,Para-choques danificado,service,True,moderado,250,False,"Rachado, solto ou deformado."
+dano_espelho,Espelho retrovisor partido,service,True,moderado,180,False,Espelho ou caixa do retrovisor partidos.
+dano_vidro_lascado,Para-brisas lascado,service,True,ligeiro,80,False,Pequena lasca sem fissura.
+dano_vidro_partido,Vidro partido ou fissurado,service,True,grave,400,True,Para-brisas fissurado ou vidro partido.
+dano_jante,Jante riscada,service,True,ligeiro,70,False,Jante raspada num passeio.
+dano_pneu,Pneu furado ou danificado,service,True,moderado,120,True,"Pneu furado, cortado ou rebentado."
+dano_farol,Farol ou farolim partido,service,True,moderado,200,False,Ótica dianteira ou traseira partida.
+dano_interior_sujo,Interior sujo,service,True,ligeiro,40,False,Necessita de limpeza além do normal.
+dano_estofos,Estofos danificados,service,True,moderado,150,False,"Queimaduras, rasgões ou manchas nos bancos."
+dano_cabo,Cabo de carregamento danificado ou em falta,service,True,moderado,250,False,Cabo danificado ou não devolvido.
+dano_acidente,Acidente com outro veículo,service,True,grave,1000,True,Colisão com outro veículo; valor da franquia.
+dano_avaria,Avaria mecânica ou elétrica,service,True,grave,0,True,Avaria não causada pelo cliente; sem custo.

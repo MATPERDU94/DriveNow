@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_tipo_dano_list" model="ir.ui.view">
+        <field name="name">drivenow.tipo.dano.list</field>
+        <field name="model">fleet.service.type</field>
+        <field name="priority">50</field>
+        <field name="arch" type="xml">
+            <list editable="bottom" decoration-danger="damage_severity == 'grave'" decoration-warning="damage_severity == 'moderado'">
+                <field name="name" string="Tipo de dano"/>
+                <field name="damage_severity"/>
+                <field name="damage_cost"/>
+                <field name="blocks_vehicle"/>
+                <field name="damage_description" optional="show"/>
+                <field name="category" column_invisible="1"/>
+                <field name="is_damage" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_tabela_danos" model="ir.actions.act_window">
+        <field name="name">Tabela de custos de danos</field>
+        <field name="res_model">fleet.service.type</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_tipo_dano_list"/>
+        <field name="domain">[('is_damage', '=', True)]</field>
+        <field name="context">{'default_is_damage': True, 'default_category': 'service'}</field>
+    </record>
+
+    <record id="action_registo_danos" model="ir.actions.act_window">
+        <field name="name">Registo de danos</field>
+        <field name="res_model">fleet.vehicle.log.services</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('service_type_id.is_damage', '=', True)]</field>
+    </record>
+
+    <menuitem id="menu_danos" name="Danos" parent="fleet.menu_root" sequence="50"/>
+    <menuitem id="menu_registo_danos" name="Registo de danos" parent="menu_danos" action="action_registo_danos" sequence="1"/>
+    <menuitem id="menu_tabela_danos" name="Tabela de custos" parent="menu_danos" action="action_tabela_danos" sequence="2"/>
+</odoo>
