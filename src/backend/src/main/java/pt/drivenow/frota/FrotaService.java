@@ -16,6 +16,7 @@ import java.util.Set;
 
 import org.springframework.stereotype.Service;
 
+import pt.drivenow.danos.DanoService;
 import pt.drivenow.localizacao.LocalizacaoService;
 import pt.drivenow.localizacao.PosicaoViatura;
 import pt.drivenow.odoo.OdooClient;
@@ -38,11 +39,14 @@ public class FrotaService {
     private final OdooClient odoo;
     private final LocalizacaoService localizacao;
     private final ReservaRepository reservas;
+    private final DanoService danos;
 
-    public FrotaService(OdooClient odoo, LocalizacaoService localizacao, ReservaRepository reservas) {
+    public FrotaService(OdooClient odoo, LocalizacaoService localizacao, ReservaRepository reservas,
+            DanoService danos) {
         this.odoo = odoo;
         this.localizacao = localizacao;
         this.reservas = reservas;
+        this.danos = danos;
     }
 
     /**
@@ -51,7 +55,7 @@ public class FrotaService {
      * @param lat              posição do cliente (opcional)
      * @param lng              posição do cliente (opcional)
      * @param raioKm           só viaturas até esta distância (opcional; exige lat/lng)
-     * @param apenasDisponiveis esconde as viaturas que estão numa reserva ativa
+     * @param apenasDisponiveis esconde as viaturas reservadas ou em reparação
      */
     public List<ViaturaDto> listar(Double lat, Double lng, Double raioKm, boolean apenasDisponiveis) {
         boolean comPosicao = lat != null && lng != null;
@@ -60,9 +64,10 @@ public class FrotaService {
         }
         Map<Long, PosicaoViatura> posicoes = localizacao.todas();
         Set<Long> reservadas = new HashSet<>(reservas.viaturasComEstado(ATIVAS));
+        Set<Long> emReparacao = danos.viaturasImobilizadas();
 
         List<ViaturaDto> resultado = listarDoOdoo().stream()
-                .map(v -> completar(v, posicoes.get(v.id()), reservadas, lat, lng))
+                .map(v -> completar(v, posicoes.get(v.id()), reservadas, emReparacao, lat, lng))
                 .filter(v -> !apenasDisponiveis || v.disponivel())
                 .filter(v -> raioKm == null || (v.distanciaKm() != null && v.distanciaKm() <= raioKm))
                 .toList();
@@ -78,10 +83,11 @@ public class FrotaService {
 
     public Optional<ViaturaDto> obter(long id) {
         Set<Long> reservadas = new HashSet<>(reservas.viaturasComEstado(ATIVAS));
+        Set<Long> emReparacao = danos.viaturasImobilizadas();
         return odoo.searchRead(MODELO, List.of(OdooClient.condicao("id", "=", id)), CAMPOS, null).stream()
                 .findFirst()
                 .map(FrotaService::paraDto)
-                .map(v -> completar(v, localizacao.daViatura(id).orElse(null), reservadas, null, null));
+                .map(v -> completar(v, localizacao.daViatura(id).orElse(null), reservadas, emReparacao, null, null));
     }
 
     /** Regista no Odoo a quilometragem da viatura (fleet.vehicle.odometer). */
@@ -96,14 +102,17 @@ public class FrotaService {
                 .toList();
     }
 
-    private static ViaturaDto completar(ViaturaDto v, PosicaoViatura p, Set<Long> reservadas, Double lat, Double lng) {
+    private static ViaturaDto completar(ViaturaDto v, PosicaoViatura p, Set<Long> reservadas, Set<Long> emReparacao,
+            Double lat, Double lng) {
         Double vLat = p != null ? p.getLatitude() : null;
         Double vLng = p != null ? p.getLongitude() : null;
         Double distancia = null;
         if (p != null && lat != null && lng != null) {
             distancia = Math.round(LocalizacaoService.distanciaKm(lat, lng, vLat, vLng) * 100) / 100.0;
         }
-        return v.comLocalizacao(vLat, vLng, !reservadas.contains(v.id()), distancia);
+        String motivo = reservadas.contains(v.id()) ? "Reservada"
+                : emReparacao.contains(v.id()) ? "Em reparação" : null;
+        return v.comLocalizacao(vLat, vLng, motivo, distancia);
     }
 
     private static ViaturaDto paraDto(Map<String, Object> r) {
@@ -117,6 +126,6 @@ public class FrotaService {
                 nomeDe(r.get("state_id")),
                 numero(r.get("entry_fee")),
                 numero(r.get("price_per_minute")),
-                null, null, true, null);
+                null, null, true, null, null);
     }
 }

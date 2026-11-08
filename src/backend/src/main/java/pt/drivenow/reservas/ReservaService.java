@@ -40,8 +40,9 @@ public class ReservaService {
         if (reservas.existsByUtilizadorIdAndEstadoIn(utilizadorId, ATIVAS)) {
             throw new RegraNegocioException("O utilizador já tem uma reserva ativa");
         }
-        if (reservas.existsByViaturaOdooIdAndEstadoIn(viaturaId, ATIVAS)) {
-            throw new RegraNegocioException("A viatura " + viatura.matricula() + " já está reservada");
+        if (!viatura.disponivel()) {
+            throw new RegraNegocioException("A viatura " + viatura.matricula() + " não está disponível ("
+                    + viatura.motivoIndisponibilidade() + ")");
         }
         if (viatura.precoMinuto() == null || viatura.precoMinuto() <= 0) {
             throw new RegraNegocioException("A viatura " + viatura.matricula()
@@ -67,8 +68,9 @@ public class ReservaService {
         Reserva r = buscar(id);
         if (r.getEstado() != EstadoReserva.RESERVADA) {
             throw new RegraNegocioException("Só é possível cancelar reservas que ainda não começaram");
-            // Nota: a taxa de entrada não é devolvida ao cancelar.
+
         }
+        // Diagrama 2: ao cancelar, o temporizador para e paga-se a taxa de entrada e os minutos decorridos.
         r.cancelar();
         return ReservaDto.de(r);
     }

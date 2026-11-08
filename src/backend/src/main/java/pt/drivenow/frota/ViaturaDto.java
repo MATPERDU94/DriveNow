@@ -5,7 +5,8 @@ package pt.drivenow.frota;
  *
  * @param taxaEntrada valor cobrado ao reservar (€)
  * @param precoMinuto preço por minuto de viagem (€)
- * @param disponivel  false se a viatura está numa reserva ativa
+ * @param disponivel  false se a viatura está numa reserva ativa ou em reparação
+ * @param motivoIndisponibilidade "Reservada" ou "Em reparação" (null se disponível)
  * @param distanciaKm distância ao ponto pedido (só quando a pesquisa indica lat/lng)
  */
 public record ViaturaDto(
@@ -21,10 +22,12 @@ public record ViaturaDto(
         Double latitude,
         Double longitude,
         boolean disponivel,
+        String motivoIndisponibilidade,
         Double distanciaKm) {
 
-    ViaturaDto comLocalizacao(Double lat, Double lng, boolean disponivel, Double distanciaKm) {
+    ViaturaDto comLocalizacao(Double lat, Double lng, String motivoIndisponibilidade, Double distanciaKm) {
         return new ViaturaDto(id, matricula, modelo, ano, lugares, quilometragem, estado,
-                taxaEntrada, precoMinuto, lat, lng, disponivel, distanciaKm);
+                taxaEntrada, precoMinuto, lat, lng, motivoIndisponibilidade == null, motivoIndisponibilidade,
+                distanciaKm);
     }
 }

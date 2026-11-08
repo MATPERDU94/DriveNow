@@ -10,6 +10,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
@@ -24,6 +26,7 @@ public class DanoService {
 
     private static final String TIPOS = "fleet.service.type";
     private static final String REGISTOS = "fleet.vehicle.log.services";
+    private static final List<String> ESTADOS_ABERTOS = List.of("new", "running");
     private static final List<String> CAMPOS_TIPO = List.of(
             "name", "damage_severity", "damage_cost", "blocks_vehicle", "damage_description");
 
@@ -59,6 +62,33 @@ public class DanoService {
         valores.put("description", descricao);
         valores.put("state", "new");
         return odoo.create(REGISTOS, valores);
+    }
+
+    /**
+     * "Dano já registado?": existe no Odoo um registo deste tipo de dano nesta viatura
+     * que ainda não foi concluído (estado Novo ou Em curso)?
+     */
+    public boolean existeDanoAberto(long viaturaId, long tipoDanoId) {
+        List<Object> dominio = List.of(
+                condicao("vehicle_id", "=", viaturaId),
+                condicao("service_type_id", "=", tipoDanoId),
+                condicao("state", "in", ESTADOS_ABERTOS));
+        return !odoo.searchRead(REGISTOS, dominio, List.of("id"), null).isEmpty();
+    }
+
+    /**
+     * Viaturas indisponíveis por dano: têm um dano por concluir de um tipo que imobiliza o carro.
+     * Quando o gestor de frota marca o registo como Concluído no Odoo, a viatura volta a ficar disponível.
+     */
+    public Set<Long> viaturasImobilizadas() {
+        List<Object> dominio = List.of(
+                condicao("state", "in", ESTADOS_ABERTOS),
+                condicao("service_type_id.is_damage", "=", true),
+                condicao("service_type_id.blocks_vehicle", "=", true));
+        return odoo.searchRead(REGISTOS, dominio, List.of("vehicle_id"), null).stream()
+                .map(r -> idDe(r.get("vehicle_id")))
+                .filter(id -> id != null)
+                .collect(Collectors.toSet());
     }
 
     private static TipoDanoDto paraDto(Map<String, Object> r) {

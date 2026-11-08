@@ -1,6 +1,7 @@
 package pt.drivenow.reservas;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -15,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import pt.drivenow.faturacao.FaturacaoService;
+
 @RestController
 @RequestMapping("/api/reservas")
 public class ReservaController {
@@ -23,9 +26,11 @@ public class ReservaController {
     }
 
     private final ReservaService reservas;
+    private final FaturacaoService faturacao;
 
-    public ReservaController(ReservaService reservas) {
+    public ReservaController(ReservaService reservas, FaturacaoService faturacao) {
         this.reservas = reservas;
+        this.faturacao = faturacao;
     }
 
     @PostMapping
@@ -45,8 +50,17 @@ public class ReservaController {
         return reservas.obter(id);
     }
 
+    /** Emite (ou volta a tentar emitir) a fatura-recibo no Moloni de uma viagem concluída. */
+    @PostMapping("/{id}/faturar")
+    public ReservaDto faturar(@PathVariable long id) {
+        return faturacao.faturar(id);
+    }
+
+    /** Cancelar: o temporizador para e a reserva é faturada (taxa de entrada + minutos decorridos). */
     @PostMapping("/{id}/cancelar")
     public ReservaDto cancelar(@PathVariable long id) {
-        return reservas.cancelar(id);
+        ReservaDto cancelada = reservas.cancelar(id);
+        CompletableFuture.runAsync(() -> faturacao.faturarSemFalhar(id));
+        return cancelada;
     }
 }

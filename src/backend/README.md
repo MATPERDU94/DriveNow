@@ -10,6 +10,8 @@ API REST da DriveNow: utilizadores, reservas, relatos de início e de fim de via
 ```
 src/main/java/pt/drivenow/
 ├── odoo/          OdooClient: chamadas à API JSON-2 do Odoo 19
+├── moloni/        MoloniClient: login OAuth e chamadas à API do Moloni
+├── faturacao/     fatura-recibo no Moloni no fim de cada viagem
 ├── frota/         GET /api/viaturas (Odoo + posição GPS + disponibilidade)
 ├── localizacao/   posição GPS de cada viatura (atualizada no fim de cada viagem)
 ├── danos/         GET /api/danos/tipos (tabela de custos do Odoo)
@@ -102,6 +104,7 @@ Depois do relato de fim, o dano aparece no Odoo em **Frota → Danos → Registo
 | GET | `/api/reservas?utilizadorId=1` | Histórico de reservas |
 | GET | `/api/reservas/{id}` | Uma reserva |
 | POST | `/api/reservas/{id}/cancelar` | Cancelar (só antes de começar) |
+| POST | `/api/reservas/{id}/faturar` | Emitir (ou repetir) a fatura-recibo no Moloni |
 | POST | `/api/reservas/{id}/relatos` | Relato `{tipo: INICIO/FIM, observacoes, danos: [{tipoDanoId, descricao}], latitude, longitude, quilometragem}` (coordenadas obrigatórias no FIM; quilometragem opcional) |
 | GET | `/api/reservas/{id}/relatos` | Relatos da reserva |
 
@@ -113,25 +116,51 @@ total = taxa de entrada + minutos × preço por minuto + penalizações
 
 - Os preços estão no Odoo, por modelo, em **Frota → Tarifário** (ex.: Renault Zoe 10 € + 0,18 €/min; Porsche Taycan 200 € + 0,63 €/min).
 - A **taxa de entrada** é fixada ao reservar e não é devolvida se a reserva for cancelada.
-- Os **minutos** contam do relato de início ao relato de fim; cada minuto começado conta (mínimo 1).
+- O **temporizador começa no momento da reserva** e para no relato de fim (ou no cancelamento); cada minuto começado conta (mínimo 1).
+- Enquanto a reserva está ativa, `minutosDecorridos` e `valorAteAgora` dão o tempo e o valor até ao momento (ecrã "Em viagem").
+- **Cancelar** (antes do relato de início) paga a taxa de entrada e os minutos decorridos, e é faturado.
 - Os preços são copiados para a reserva no momento em que é criada: se o tarifário mudar a meio da viagem, o cliente paga o preço que viu.
 - Não é possível reservar uma viatura sem preço por minuto definido no Odoo.
 
+## Faturação (Moloni)
+
+No fim de cada viagem (relato de FIM), o backend emite no Moloni uma **fatura-recibo**:
+
+| Linha | Artigo no Moloni (referência) |
+|---|---|
+| Taxa de entrada | `DN-TAXA` |
+| Minutos de viagem (qtd = minutos) | `DN-MIN` |
+| Uma linha por penalização de dano | `DN-DANO` |
+
+- Os três artigos têm de ser criados uma vez no Moloni (**Tabelas → Artigos**), do tipo **Serviço** e com **IVA 23%**.
+- Os preços do tarifário **incluem IVA**; no Moloni as linhas levam o preço sem IVA.
+- O cliente é criado no Moloni com o NIF do utilizador (ou como "Consumidor final", NIF 999999990, se não tiver NIF).
+- `MOLONI_FECHAR_DOCUMENTOS=false` (por omissão): a fatura fica em **rascunho**, sem valor fiscal e sem PDF. Com `true`, é finalizada e o `faturaPdfUrl` da reserva traz o link do PDF.
+- Se o Moloni falhar, a viagem termina na mesma; a reserva fica com `estadoFatura: ERRO` e o motivo em `faturaErro`. Para tentar de novo: `curl -X POST localhost:8080/api/reservas/{id}/faturar`.
+
+## Danos (diagrama 4)
+
+Para cada dano assinalado num relato:
+
+1. **Já registado?** Se o Odoo já tem esse tipo de dano nessa viatura por reparar (estado Novo ou Em curso), é ignorado.
+2. **Responsável:** no relato de **fim**, o próprio cliente; no relato de **início**, o **condutor anterior** (a última viagem concluída nessa viatura). Sem condutor anterior, o dano é registado mas não é cobrado.
+3. **Penalização:** o custo da tabela de danos, até ao limite da **franquia** (`DRIVENOW_FRANQUIA`, 1000 € por omissão) por viagem.
+4. As penalizações do fim vão na fatura da viagem; as cobradas ao condutor anterior têm uma **fatura-recibo à parte**.
+5. Um dano de um tipo que **imobiliza o carro** deixa a viatura **"Em reparação"** (indisponível no mapa) até o gestor de frota marcar o registo como **Concluído** no Odoo.
+
 ## Regras implementadas
 
-- Um utilizador só pode ter uma reserva ativa, e uma viatura só pode estar numa reserva ativa.
+- Um utilizador só pode ter uma reserva ativa; só se reservam viaturas disponíveis (não reservadas nem em reparação).
 - Relato de **início**: só com a reserva em `RESERVADA`; passa a `EM_CURSO`.
 - Relato de **fim**: só com a reserva em `EM_CURSO`; passa a `CONCLUIDA`, calcula o preço, e a posição da viatura é atualizada com as coordenadas enviadas. Se vier a quilometragem, é registada no Odoo (não pode ser inferior à atual).
 - Não há hubs: cada viatura tem uma posição GPS. No primeiro arranque, as viaturas sem posição ficam distribuídas por 30 pontos de Guimarães.
 - `disponivel` é `false` enquanto a viatura estiver numa reserva ativa.
-- Todos os danos assinalados são registados no Odoo, com o custo da tabela.
-- Só os danos do relato de **fim** são cobrados ao cliente, e não os de um tipo que ele já tinha assinalado no relato de início.
 
 ## Próximos passos
 
-- `SapClient` (Business Partner, Sales Order) e `MoloniClient` (faturas-recibo)
+- `SapClient` (Business Partner, Sales Order)
 - Autenticação (registo e login)
-- Marcar a viatura como indisponível no Odoo quando um dano a imobiliza
+- Documentação dos carros (seguro, inspeção, IUC) e alertas de validade (diagrama 5)
 - Cobrança (meios de pagamento e dívidas pendentes)
 
 ## Comandos úteis

@@ -11,6 +11,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import pt.drivenow.moloni.MoloniException;
 import pt.drivenow.odoo.OdooException;
 
 /** Converte as exceções em respostas JSON (formato ProblemDetail). */
@@ -41,6 +42,12 @@ public class ApiExceptionHandler {
     public ProblemDetail odoo(OdooException e) {
         log.error("Erro na integração com o Odoo", e);
         return problema(HttpStatus.BAD_GATEWAY, "Erro no Odoo", e.getMessage());
+    }
+
+    @ExceptionHandler(MoloniException.class)
+    public ProblemDetail moloni(MoloniException e) {
+        log.error("Erro na integração com o Moloni", e);
+        return problema(HttpStatus.BAD_GATEWAY, "Erro no Moloni", e.getMessage());
     }
 
     private static ProblemDetail problema(HttpStatus status, String titulo, String detalhe) {

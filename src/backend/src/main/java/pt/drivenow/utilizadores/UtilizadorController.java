@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import pt.drivenow.common.NaoEncontradoException;
+import pt.drivenow.common.Nif;
 import pt.drivenow.common.RegraNegocioException;
 
 @RestController
@@ -41,6 +42,9 @@ public class UtilizadorController {
     public Utilizador criar(@Valid @RequestBody CriarUtilizadorRequest pedido) {
         if (utilizadores.existsByEmailIgnoreCase(pedido.email())) {
             throw new RegraNegocioException("Já existe um utilizador com o email " + pedido.email());
+        }
+        if (pedido.nif() != null && !pedido.nif().isBlank() && !Nif.valido(pedido.nif())) {
+            throw new RegraNegocioException("O NIF " + pedido.nif() + " não é um NIF português válido");
         }
         return utilizadores.save(new Utilizador(pedido.nome(), pedido.email(), pedido.nif(), pedido.telefone()));
     }

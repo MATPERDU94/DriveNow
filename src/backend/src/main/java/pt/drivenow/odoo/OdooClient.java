@@ -16,6 +16,7 @@ import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 
+import pt.drivenow.config.HttpTimeouts;
 import pt.drivenow.config.OdooProperties;
 
 /**
@@ -45,6 +46,7 @@ public class OdooClient {
         this.url = props.url();
         this.json = json;
         RestClient.Builder b = builder
+                .requestFactory(HttpTimeouts.fabrica())
                 .baseUrl(props.url())
                 .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + props.apiKey());
         if (props.database() != null && !props.database().isBlank()) {

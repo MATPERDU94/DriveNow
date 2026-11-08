@@ -22,7 +22,8 @@ import pt.drivenow.utilizadores.Utilizador;
 /**
  * Reserva de uma viatura e respetiva viagem.
  *
- * Preço: taxa de entrada (cobrada ao reservar) + minutos de viagem × preço por minuto + penalizações.
+ * Preço: taxa de entrada (cobrada ao reservar) + minutos × preço por minuto + penalizações.
+ * O temporizador começa no momento da reserva (criadaEm) e para no fim da viagem ou no cancelamento.
  * Os preços são copiados do Odoo no momento da reserva, para não mudarem a meio da viagem.
  */
 @Entity
@@ -60,7 +61,7 @@ public class Reserva {
     @Column(precision = 10, scale = 2)
     private BigDecimal precoMinuto;
 
-    /** Minutos de viagem (cada minuto começado conta). */
+    /** Minutos desde a reserva até ao fim ou cancelamento (cada minuto começado conta). */
     private Long minutos;
 
     /** minutos × preço por minuto. */
@@ -73,6 +74,18 @@ public class Reserva {
     /** taxa de entrada + valor da viagem + penalizações. */
     @Column(precision = 10, scale = 2)
     private BigDecimal total;
+
+    @Enumerated(EnumType.STRING)
+    private EstadoFatura estadoFatura = EstadoFatura.PENDENTE;
+
+    /** Id da fatura-recibo no Moloni. */
+    private Long moloniDocumentoId;
+
+    @Column(length = 1000)
+    private String faturaPdfUrl;
+
+    @Column(length = 2000)
+    private String faturaErro;
 
     protected Reserva() {
     }
@@ -94,15 +107,55 @@ public class Reserva {
 
     public void terminarViagem(BigDecimal penalizacoes) {
         this.estado = EstadoReserva.CONCLUIDA;
-        this.fimViagem = Instant.now();
-        this.minutos = minutosEntre(inicioViagem, fimViagem);
-        this.valorViagem = precoMinuto().multiply(BigDecimal.valueOf(minutos)).setScale(2, RoundingMode.HALF_UP);
+        pararTemporizador();
         this.totalPenalizacoes = penalizacoes.setScale(2, RoundingMode.HALF_UP);
         this.total = taxaEntrada().add(valorViagem).add(totalPenalizacoes);
     }
 
+    /** Cancelar antes de começar: paga a taxa de entrada e os minutos que o carro esteve bloqueado. */
     public void cancelar() {
         this.estado = EstadoReserva.CANCELADA;
+        pararTemporizador();
+        this.total = taxaEntrada().add(valorViagem).add(totalPenalizacoes);
+    }
+
+    /** Penalização cobrada mais tarde (dano reportado pelo condutor seguinte). */
+    public void adicionarPenalizacao(BigDecimal valor) {
+        this.totalPenalizacoes = totalPenalizacoes.add(valor).setScale(2, RoundingMode.HALF_UP);
+        this.total = (total != null ? total : taxaEntrada()).add(valor);
+    }
+
+    /** Minutos já contados (para reservas ativas: até agora). */
+    public long minutosAteAgora() {
+        return minutosEntre(criadaEm, fimViagem != null ? fimViagem : Instant.now());
+    }
+
+    /** Valor da reserva ativa até agora: taxa de entrada + minutos × preço por minuto. */
+    public BigDecimal valorAteAgora() {
+        return taxaEntrada().add(precoMinuto().multiply(BigDecimal.valueOf(minutosAteAgora())))
+                .setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private void pararTemporizador() {
+        this.fimViagem = Instant.now();
+        this.minutos = minutosEntre(criadaEm, fimViagem);
+        this.valorViagem = precoMinuto().multiply(BigDecimal.valueOf(minutos)).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    public boolean ativa() {
+        return estado == EstadoReserva.RESERVADA || estado == EstadoReserva.EM_CURSO;
+    }
+
+    public void faturaCriada(long documentoId, boolean finalizada, String pdfUrl) {
+        this.moloniDocumentoId = documentoId;
+        this.estadoFatura = finalizada ? EstadoFatura.EMITIDA : EstadoFatura.RASCUNHO;
+        this.faturaPdfUrl = pdfUrl;
+        this.faturaErro = null;
+    }
+
+    public void faturaFalhou(String erro) {
+        this.estadoFatura = EstadoFatura.ERRO;
+        this.faturaErro = erro != null && erro.length() > 2000 ? erro.substring(0, 2000) : erro;
     }
 
     /** Minutos arredondados para cima, no mínimo 1. */
@@ -129,4 +182,8 @@ public class Reserva {
     public BigDecimal getValorViagem() { return valorViagem; }
     public BigDecimal getTotalPenalizacoes() { return totalPenalizacoes; }
     public BigDecimal getTotal() { return total; }
+    public EstadoFatura getEstadoFatura() { return estadoFatura != null ? estadoFatura : EstadoFatura.PENDENTE; }
+    public Long getMoloniDocumentoId() { return moloniDocumentoId; }
+    public String getFaturaPdfUrl() { return faturaPdfUrl; }
+    public String getFaturaErro() { return faturaErro; }
 }

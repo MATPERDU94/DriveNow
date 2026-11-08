@@ -3,6 +3,10 @@ package pt.drivenow.reservas;
 import java.math.BigDecimal;
 import java.time.Instant;
 
+/**
+ * @param minutosDecorridos minutos desde a reserva (atualizado ao momento enquanto a reserva está ativa)
+ * @param valorAteAgora     taxa de entrada + minutos × preço por minuto até agora (ecrã "Em viagem")
+ */
 public record ReservaDto(
         Long id,
         Long utilizadorId,
@@ -18,7 +22,13 @@ public record ReservaDto(
         Long minutos,
         BigDecimal valorViagem,
         BigDecimal totalPenalizacoes,
-        BigDecimal total) {
+        BigDecimal total,
+        Long minutosDecorridos,
+        BigDecimal valorAteAgora,
+        EstadoFatura estadoFatura,
+        Long moloniDocumentoId,
+        String faturaPdfUrl,
+        String faturaErro) {
 
     public static ReservaDto de(Reserva r) {
         return new ReservaDto(
@@ -36,6 +46,12 @@ public record ReservaDto(
                 r.getMinutos(),
                 r.getValorViagem(),
                 r.getTotalPenalizacoes(),
-                r.getTotal());
+                r.getTotal(),
+                r.ativa() ? Long.valueOf(r.minutosAteAgora()) : r.getMinutos(),
+                r.ativa() ? r.valorAteAgora() : r.getTotal(),
+                r.getEstadoFatura(),
+                r.getMoloniDocumentoId(),
+                r.getFaturaPdfUrl(),
+                r.getFaturaErro());
     }
 }

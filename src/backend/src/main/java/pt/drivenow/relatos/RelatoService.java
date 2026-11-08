@@ -3,9 +3,8 @@ package pt.drivenow.relatos;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,14 +16,17 @@ import pt.drivenow.frota.ViaturaDto;
 import pt.drivenow.localizacao.LocalizacaoService;
 import pt.drivenow.reservas.EstadoReserva;
 import pt.drivenow.reservas.Reserva;
+import pt.drivenow.reservas.ReservaRepository;
 import pt.drivenow.reservas.ReservaService;
 
 /**
- * Relatos de início e de fim de viagem.
+ * Relatos de início e de fim de viagem (diagramas 2 e 4).
  *
- * Cada dano assinalado é registado no Odoo (Frota → Danos → Registo de danos).
- * Só os danos novos do relato de FIM são cobrados ao cliente: os do relato de INÍCIO
- * já existiam, e um dano de FIM do mesmo tipo de um já assinalado no INÍCIO também não é cobrado.
+ * Para cada dano assinalado:
+ * - se já está registado no Odoo e por reparar, é ignorado;
+ * - senão, é registado no Odoo e cobrado ao responsável: no relato de FIM, o próprio cliente;
+ *   no relato de INÍCIO, o condutor anterior (a última viagem concluída nesta viatura);
+ * - o total de penalizações de uma viagem não passa do limite da franquia.
  */
 @Service
 public class RelatoService {
@@ -34,17 +36,22 @@ public class RelatoService {
 
     private final RelatoRepository relatos;
     private final ReservaService reservas;
+    private final ReservaRepository reservaRepository;
     private final DanoService danos;
     private final LocalizacaoService localizacao;
     private final FrotaService frota;
+    private final BigDecimal franquia;
 
-    public RelatoService(RelatoRepository relatos, ReservaService reservas, DanoService danos,
-            LocalizacaoService localizacao, FrotaService frota) {
+    public RelatoService(RelatoRepository relatos, ReservaService reservas, ReservaRepository reservaRepository,
+            DanoService danos, LocalizacaoService localizacao, FrotaService frota,
+            @Value("${drivenow.franquia:1000}") BigDecimal franquia) {
         this.relatos = relatos;
         this.reservas = reservas;
+        this.reservaRepository = reservaRepository;
         this.danos = danos;
         this.localizacao = localizacao;
         this.frota = frota;
+        this.franquia = franquia.setScale(2, RoundingMode.HALF_UP);
     }
 
     @Transactional
@@ -65,8 +72,17 @@ public class RelatoService {
             throw new RegraNegocioException("Esta reserva já tem um relato de " + tipo);
         }
 
-        Set<Long> jaExistiam = tipo == TipoRelato.FIM ? tiposDoRelatoDeInicio(reservaId) : Set.of();
+        // Quem paga os danos deste relato
+        Reserva responsavel = tipo == TipoRelato.FIM
+                ? reserva
+                : reservaRepository.findFirstByViaturaOdooIdAndEstadoAndIdLessThanOrderByFimViagemDesc(
+                        reserva.getViaturaOdooId(), EstadoReserva.CONCLUIDA, reserva.getId()).orElse(null);
+        BigDecimal margemFranquia = responsavel == null ? BigDecimal.ZERO
+                : franquia.subtract(tipo == TipoRelato.FIM ? BigDecimal.ZERO : responsavel.getTotalPenalizacoes())
+                        .max(BigDecimal.ZERO);
+
         Relato relato = new Relato(reserva, tipo, observacoes);
+        BigDecimal cobrado = BigDecimal.ZERO;
 
         for (DanoReportado d : reportados == null ? List.<DanoReportado>of() : reportados) {
             if (d == null || d.tipoDanoId() == null) {
@@ -75,25 +91,44 @@ public class RelatoService {
             TipoDanoDto tipoDano = danos.obterTipo(d.tipoDanoId())
                     .orElseThrow(() -> new RegraNegocioException("Tipo de dano " + d.tipoDanoId() + " não existe"));
 
+            if (danos.existeDanoAberto(reserva.getViaturaOdooId(), tipoDano.id())) {
+                relato.adicionarDano(new RelatoDano(tipoDano.id(), tipoDano.nome(), d.descricao(), zero(),
+                        null, null, "Dano já registado e por reparar: ignorado"));
+                continue;
+            }
+
             BigDecimal custo = BigDecimal.valueOf(tipoDano.custo() == null ? 0 : tipoDano.custo())
                     .setScale(2, RoundingMode.HALF_UP);
-            boolean cobrado = tipo == TipoRelato.FIM && !jaExistiam.contains(tipoDano.id());
-            BigDecimal penalizacao = cobrado ? custo : BigDecimal.ZERO.setScale(2);
+            BigDecimal penalizacao = zero();
+            String nota;
+            if (responsavel == null) {
+                nota = "Sem condutor anterior identificado: não cobrado";
+            } else {
+                penalizacao = custo.min(margemFranquia.subtract(cobrado)).max(BigDecimal.ZERO)
+                        .setScale(2, RoundingMode.HALF_UP);
+                nota = tipo == TipoRelato.FIM
+                        ? "Cobrado ao cliente"
+                        : "Cobrado ao condutor anterior (reserva #" + responsavel.getId() + ")";
+                if (penalizacao.compareTo(custo) < 0) {
+                    nota += "; limitado pela franquia de " + franquia + " €";
+                }
+                cobrado = cobrado.add(penalizacao);
+            }
 
             long odooId = danos.registar(reserva.getViaturaOdooId(), tipoDano.id(), custo.doubleValue(),
-                    descricaoOdoo(reserva, tipo, cobrado, d.descricao()));
-
-            relato.adicionarDano(new RelatoDano(tipoDano.id(), tipoDano.nome(), d.descricao(), penalizacao, odooId));
+                    descricaoOdoo(reserva, tipo, responsavel, penalizacao, d.descricao()));
+            relato.adicionarDano(new RelatoDano(tipoDano.id(), tipoDano.nome(), d.descricao(), penalizacao,
+                    odooId, responsavel == null ? null : responsavel.getId(), nota));
         }
 
         relato = relatos.save(relato);
         if (tipo == TipoRelato.INICIO) {
             reserva.iniciarViagem();
+            if (responsavel != null && cobrado.signum() > 0) {
+                responsavel.adicionarPenalizacao(cobrado);
+            }
         } else {
-            BigDecimal total = relato.getDanos().stream()
-                    .map(RelatoDano::getPenalizacao)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-            reserva.terminarViagem(total);
+            reserva.terminarViagem(cobrado);
             localizacao.atualizar(reserva.getViaturaOdooId(), latitude, longitude);
             if (quilometragem != null) {
                 frota.registarQuilometragem(reserva.getViaturaOdooId(), quilometragem);
@@ -123,16 +158,16 @@ public class RelatoService {
         }
     }
 
-    private Set<Long> tiposDoRelatoDeInicio(long reservaId) {
-        return relatos.findByReservaIdAndTipo(reservaId, TipoRelato.INICIO)
-                .map(r -> r.getDanos().stream().map(RelatoDano::getTipoDanoOdooId).collect(Collectors.toSet()))
-                .orElse(Set.of());
+    private static BigDecimal zero() {
+        return BigDecimal.ZERO.setScale(2);
     }
 
-    private static String descricaoOdoo(Reserva reserva, TipoRelato tipo, boolean cobrado, String descricaoCliente) {
+    private static String descricaoOdoo(Reserva reserva, TipoRelato tipo, Reserva responsavel, BigDecimal penalizacao,
+            String descricaoCliente) {
         String texto = "Reserva #" + reserva.getId() + " | relato de " + tipo
-                + " | cliente: " + reserva.getUtilizador().getNome()
-                + (cobrado ? " | cobrado ao cliente" : " | não cobrado");
+                + " | reportado por: " + reserva.getUtilizador().getNome()
+                + (responsavel == null ? " | sem responsável"
+                        : " | responsável: reserva #" + responsavel.getId() + " (" + penalizacao + " €)");
         if (descricaoCliente != null && !descricaoCliente.isBlank()) {
             texto += " | " + descricaoCliente;
         }

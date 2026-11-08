@@ -18,6 +18,22 @@ odoo:
   database: ${ODOO_DB:drivenow}
   api-key: ${ODOO_API_KEY:}
 
+moloni:
+  client-id: ${MOLONI_CLIENT_ID:}
+  client-secret: ${MOLONI_CLIENT_SECRET:}
+  username: ${MOLONI_USERNAME:}
+  password: ${MOLONI_PASSWORD:}
+  # id da empresa no Moloni (a conta pode ter também a "Empresa Demonstração")
+  company-id: ${MOLONI_COMPANY_ID:}
+  # false = faturas em rascunho (sem valor fiscal, sem PDF); true = faturas finalizadas, com PDF
+  fechar-documentos: ${MOLONI_FECHAR_DOCUMENTOS:false}
+  # IVA incluído nos preços do tarifário (%)
+  iva: ${MOLONI_IVA:23}
+
+drivenow:
+  # Limite das penalizações por viagem (€)
+  franquia: ${DRIVENOW_FRANQUIA:1000}
+
 management:
   endpoints:
     web:
