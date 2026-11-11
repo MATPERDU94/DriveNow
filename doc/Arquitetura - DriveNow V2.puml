@@ -1,0 +1,56 @@
+@startuml Arquitetura - DriveNow
+title DriveNow - Arquitetura e integrações (v2)
+
+skinparam componentStyle rectangle
+skinparam defaultFontName Arial
+skinparam shadowing false
+hide stereotype
+skinparam ArrowColor #444444
+skinparam rectangle {
+  BackgroundColor<<lowcode>> #E3F2FD
+  BackgroundColor<<middleware>> #F1F8E9
+  BackgroundColor<<orquestracao>> #FFF3E0
+  BackgroundColor<<erp>> #F5F5F5
+}
+
+actor "Cliente" as cliente
+actor "Gestor de frota" as gestor
+
+package "DriveNow" {
+  rectangle "**App DriveNow (SAP Build Apps)**\n--\n• Criar conta e login\n• Mapa com carros disponíveis (GPS)\n• Reserva e viagem ativa (temporizador)\n• Relato do estado do carro\n  (início e fim da viagem)\n• Resumo, pagamento e faturas\n• Histórico de viagens" <<lowcode>> as app
+
+  rectangle "**Backend (Spring Boot) - middleware**\n--\n• API REST para a app (login com token)\n• Reservas e temporizador\n• Preço: taxa de entrada + minutos\n• Regras dos danos (condutor anterior,\n  franquia, dano já registado)\n• Pagamentos (simulados) e dívidas\n• Posição GPS das viaturas" <<middleware>> as backend
+
+  database "**Base de dados (PostgreSQL)**\n--\n• Utilizadores e meios de pagamento\n  (só os últimos 4 dígitos)\n• Reservas, viagens e cobranças\n• Relatos e danos\n• Posições das viaturas\n• IDs do SAP e do Moloni" as bd
+
+  rectangle "**n8n - orquestração**\n--\n• Cliente registado → SAP + Moloni\n• Viagem paga → fatura no Moloni\n• Dano → Odoo + fatura no Moloni\n• Diário: documentos e manutenção\n• Ramos de erro e registos (logs)" <<orquestracao>> as n8n
+}
+
+package "ERP" {
+  rectangle "**SAP (s20, client 305)**\n--\n• Business Partner (cliente)\n• Consulta de produtos e vendas\n• Registo de vendas: a confirmar\n  com o docente" <<erp>> as sap
+
+  rectangle "**Moloni**\n--\n• Clientes fiscais (nome, NIF)\n• Faturas-recibo\n  (viagens e penalizações)\n• PDF das faturas" <<erp>> as moloni
+
+  rectangle "**Odoo Community (Docker)**\n--\n• Frota (registo mestre das viaturas)\n• Tarifário (taxa + preço/minuto)\n• Danos e reparações\n• Quilometragem\n• Documentação (seguro, inspeção, IUC)" <<erp>> as odoo
+}
+
+cliente --> app : usa a app
+app --> backend : pedidos REST\n(HTTPS, via túnel)
+backend --> bd : lê e grava
+backend --> odoo : consulta frota, tarifário\ne carros indisponíveis
+backend --> n8n : eventos (webhooks)
+n8n --> backend : IDs e estado\ndas faturas
+n8n --> sap : criar Business Partner\n(OData + CSRF token)
+n8n --> moloni : criar cliente,\nemitir faturas, obter PDF
+n8n --> odoo : registar danos\ne quilometragem
+gestor --> odoo : renova documentos,\nconclui reparações
+
+legend right
+  **Sistema de referência de cada dado**
+  Clientes (Business Partner): SAP
+  Faturas: Moloni
+  Viaturas, tarifário, danos, documentos: Odoo
+  Reservas, viagens, pagamentos, GPS: Backend
+endlegend
+
+@enduml

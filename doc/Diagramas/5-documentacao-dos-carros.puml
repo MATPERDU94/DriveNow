@@ -1,39 +1,59 @@
 @startuml 5 - Documentação dos Carros
-title DriveNow - 5. Documentação dos carros (Seguro, inspeção, IUC...)
+title DriveNow - 5. Documentação e manutenção dos carros (v2)
 
+|n8n|
 |Odoo|
 |Gestor de frota|
-|App DriveNow|
+|Backend|
+|App (SAP Build Apps)|
 
-|Odoo|
+|n8n|
 start
-:Verificar diariamente a validade dos documentos\n(seguro, inspeção periódica, IUC);
+:Fluxo agendado (todos os dias)\nler validade dos documentos\ne manutenções previstas;
+|Odoo|
+:Devolver documentos de cada viatura\n(seguro, inspeção periódica, IUC)\ne manutenções por fazer;
+note right
+  Os documentos ficam no Odoo
+  como contratos da viatura
+  (tipo + data de validade).
+end note
 
-if (Algum documento expira\nnos próximos 30 dias?) then (sim)
-  :Alertar o gestor de frota;
-
+|n8n|
+if (Algum documento expira nos próximos 30 dias\nou manutenção prevista para breve?) then (sim)
+  :Enviar alerta ao gestor de frota\n(email com viatura e documento);
   |Gestor de frota|
-  if (Renovado antes de expirar? \n (Seguro, inspeção, IUC...)) then (sim)
-    :Renovar o documento;
-    |Odoo|
-    :Atualizar a data de validade;
-  else (não)
-    |Odoo|
-    :Marcar o carro como indisponível\n(documentação expirada);
-    |App DriveNow|
-    :Deixar de mostrar o carro no mapa;
-
-    |Gestor de frota|
-    :Renovar o documento;
-    |Odoo|
-    :Atualizar a data de validade;
-    :Marcar o carro como disponível;
-    |App DriveNow|
-    :Voltar a mostrar o carro no mapa;
-  endif
+  :Renovar o documento\nou fazer a manutenção;
+  |Odoo|
+  :Atualizar a data de validade\nou concluir a manutenção;
 else (não)
 endif
 
+|n8n|
+if (Algum documento já expirou\nou manutenção em atraso?) then (sim)
+  :Registar no log e alertar\no gestor de frota (urgente);
+else (não)
+endif
+stop
+
+|Backend|
+start
+:Antes de mostrar o mapa\ne antes de confirmar uma reserva;
+|Odoo|
+:Consultar documentos e manutenção\nda viatura;
+|Backend|
+if (Documento caducado ou\nmanutenção em atraso?) then (sim)
+  :Viatura indisponível\n(as viagens em curso terminam normalmente;\nnovas reservas ficam bloqueadas);
+  |App (SAP Build Apps)|
+  :Não mostrar o carro no mapa\n(ou mostrar o motivo ao reservar);
+else (não)
+  |App (SAP Build Apps)|
+  :Mostrar o carro como disponível;
+endif
+note right
+  Quando o gestor renova o documento,
+  o carro volta ao mapa automaticamente,
+  sem outros passos.
+end note
 stop
 
 @enduml

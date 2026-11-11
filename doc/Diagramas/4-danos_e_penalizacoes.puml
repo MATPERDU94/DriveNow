@@ -1,71 +1,87 @@
 @startuml 4 - Danos e Penalizações
-title DriveNow - 4. Danos e penalizações
+title DriveNow - 4. Danos e penalizações (v2)
 
-|App DriveNow|
-|Odoo|
 |Cliente|
+|App (SAP Build Apps)|
+|Backend|
+|n8n|
+|Odoo|
 |SAP|
 |Moloni|
+|Gestor de frota|
 
-|App DriveNow|
+|Backend|
 start
-:Receber relato com dano\n(fim da viagem ou início da viagem seguinte);
+:Receber relato com dano\n(início ou fim da viagem);
 
-if (Dano já registado?) then (sim)
+|Odoo|
+:Consultar danos por reparar\nnesta viatura;
+
+|Backend|
+if (Dano já registado e por reparar?) then (sim)
   :Ignorar\n(dano já tratado);
+  stop
 else (não)
-  :Identificar o responsável\n(quem o reportou no fim da viagem,\nou o condutor anterior se reportado no início);
+endif
 
-  |Odoo|
-  :Registar o dano\n(tipo de dano e descrição);
-  :Obter o custo da tabela de danos;
-  :Marcar o carro como indisponível\n(após a viagem em curso);
+:Identificar o responsável\n(fim da viagem: o próprio cliente;\ninício: o condutor anterior);
+:Obter o custo da tabela de danos (Odoo)\ne calcular a penalização\n(até ao limite da franquia por viagem);
 
-  |App DriveNow|
-  :Calcular penalização\n(custo da tabela, até ao limite da franquia);
+:Enviar evento "dano reportado"\n(webhook para o n8n);
+|n8n|
+:Pedir registo do dano;
+|Odoo|
+:Registar o dano\n(tipo, descrição, custo, estado "Novo");
+if (O tipo de dano imobiliza o carro?) then (sim)
+  :Carro fica "em reparação"\n(deixa de aparecer no mapa);
+else (não)
+endif
 
-  fork
-    |Cliente|
-    :Receber notificação com descrição e valor;
-
+fork
+  |Backend|
+  if (Quem paga?) then (o próprio cliente\n(relato de fim))
+    :Juntar a penalização ao valor da viagem\n(pagamento e fatura no diagrama 3);
+  elseif (o condutor anterior\n(relato de início)) then
+    |App (SAP Build Apps)|
+    :Notificar o condutor anterior\n(descrição e valor);
     repeat
-      |App DriveNow|
-      :Cobrar meio de pagamento associado;
+      |Backend|
+      :Cobrar meio de pagamento associado\n(pagamento simulado);
       if (Pagamento aprovado?) then (sim)
       else (não)
         :Registar dívida pendente\ne bloquear novas reservas;
         |Cliente|
         :Atualizar meio de pagamento;
       endif
-      |App DriveNow|
+      |Backend|
     repeat while (Pagamento em falta?) is (sim) not (não)
 
+    |Backend|
+    :Enviar evento "penalização paga"\n(webhook para o n8n);
     |SAP|
-    :Registar venda da penalização (Sales Order);
-
+    :Registar venda da penalização\n(serviço a confirmar com o docente);
     repeat
       |Moloni|
-      :Emitir fatura-recibo da penalização;
-      |App DriveNow|
+      :Emitir fatura-recibo da penalização\n(rascunho; finalizada quando permitido);
+      |n8n|
       :Verificar resposta do Moloni;
-      backward:Marcar "pendente de faturação"\ne tentar de novo mais tarde;
+      backward:Ramo de erro: marcar "pendente de faturação"\ne tentar de novo mais tarde;
     repeat while (Fatura emitida?) is (não) not (sim)
-
-    |Moloni|
-    :Disponibilizar PDF da fatura;
-
-    |App DriveNow|
-    :Enviar fatura por email;
-
+    |n8n|
+    :Enviar fatura por email\n(quando finalizada);
     |Cliente|
     :Receber fatura;
-  fork again
-    |Odoo|
-    :Reparar o carro;
-    :Concluir registo de manutenção;
-    :Marcar o carro como disponível;
-  end fork
-endif
+  else (ninguém\n(sem condutor anterior))
+    |Backend|
+    :Dano registado sem cobrança;
+  endif
+fork again
+  |Gestor de frota|
+  :Reparar o carro;
+  :Marcar o registo do dano como\n"Concluído" no Odoo;
+  |Odoo|
+  :Carro volta a estar disponível\n(e a aparecer no mapa);
+end fork
 
 stop
 

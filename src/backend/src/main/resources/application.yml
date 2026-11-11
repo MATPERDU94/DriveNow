@@ -33,6 +33,12 @@ moloni:
 drivenow:
   # Limite das penalizações por viagem (€)
   franquia: ${DRIVENOW_FRANQUIA:1000}
+  # Segredo para assinar os tokens de login (mínimo 32 caracteres; mudar em produção)
+  jwt-secret: ${JWT_SECRET:drivenow-segredo-de-desenvolvimento-mudar-em-producao}
+  # Validade do token de login (horas)
+  jwt-horas: ${JWT_HORAS:24}
+  # Endereços do frontend autorizados a chamar a API (CORS)
+  cors-origins: ${CORS_ORIGINS:http://localhost:5173,http://localhost:3000}
 
 management:
   endpoints:

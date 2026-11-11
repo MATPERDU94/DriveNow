@@ -76,6 +76,12 @@ public class Reserva {
     private BigDecimal total;
 
     @Enumerated(EnumType.STRING)
+    private EstadoPagamento estadoPagamento = EstadoPagamento.PENDENTE;
+
+    /** Meio usado no pagamento, ex.: "Visa •••• 4242" (ecrã "Viagem terminada"). */
+    private String pagamentoDescricao;
+
+    @Enumerated(EnumType.STRING)
     private EstadoFatura estadoFatura = EstadoFatura.PENDENTE;
 
     /** Id da fatura-recibo no Moloni. */
@@ -146,6 +152,11 @@ public class Reserva {
         return estado == EstadoReserva.RESERVADA || estado == EstadoReserva.EM_CURSO;
     }
 
+    public void pagamentoRegistado(boolean pago, String meio) {
+        this.estadoPagamento = pago ? EstadoPagamento.PAGO : EstadoPagamento.EM_DIVIDA;
+        this.pagamentoDescricao = meio;
+    }
+
     public void faturaCriada(long documentoId, boolean finalizada, String pdfUrl) {
         this.moloniDocumentoId = documentoId;
         this.estadoFatura = finalizada ? EstadoFatura.EMITIDA : EstadoFatura.RASCUNHO;
@@ -182,6 +193,8 @@ public class Reserva {
     public BigDecimal getValorViagem() { return valorViagem; }
     public BigDecimal getTotalPenalizacoes() { return totalPenalizacoes; }
     public BigDecimal getTotal() { return total; }
+    public EstadoPagamento getEstadoPagamento() { return estadoPagamento != null ? estadoPagamento : EstadoPagamento.PENDENTE; }
+    public String getPagamentoDescricao() { return pagamentoDescricao; }
     public EstadoFatura getEstadoFatura() { return estadoFatura != null ? estadoFatura : EstadoFatura.PENDENTE; }
     public Long getMoloniDocumentoId() { return moloniDocumentoId; }
     public String getFaturaPdfUrl() { return faturaPdfUrl; }

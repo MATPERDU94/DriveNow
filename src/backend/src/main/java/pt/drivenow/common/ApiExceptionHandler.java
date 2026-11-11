@@ -11,6 +11,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import pt.drivenow.auth.CredenciaisInvalidasException;
 import pt.drivenow.moloni.MoloniException;
 import pt.drivenow.odoo.OdooException;
 
@@ -23,6 +24,11 @@ public class ApiExceptionHandler {
     @ExceptionHandler(NaoEncontradoException.class)
     public ProblemDetail naoEncontrado(NaoEncontradoException e) {
         return problema(HttpStatus.NOT_FOUND, "Não encontrado", e.getMessage());
+    }
+
+    @ExceptionHandler(CredenciaisInvalidasException.class)
+    public ProblemDetail credenciais(CredenciaisInvalidasException e) {
+        return problema(HttpStatus.UNAUTHORIZED, "Login falhou", e.getMessage());
     }
 
     @ExceptionHandler(RegraNegocioException.class)

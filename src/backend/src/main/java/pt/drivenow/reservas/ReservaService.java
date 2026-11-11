@@ -12,6 +12,7 @@ import pt.drivenow.common.NaoEncontradoException;
 import pt.drivenow.common.RegraNegocioException;
 import pt.drivenow.frota.FrotaService;
 import pt.drivenow.frota.ViaturaDto;
+import pt.drivenow.pagamentos.PagamentoService;
 import pt.drivenow.utilizadores.Utilizador;
 import pt.drivenow.utilizadores.UtilizadorRepository;
 
@@ -23,11 +24,14 @@ public class ReservaService {
     private final ReservaRepository reservas;
     private final UtilizadorRepository utilizadores;
     private final FrotaService frota;
+    private final PagamentoService pagamentos;
 
-    public ReservaService(ReservaRepository reservas, UtilizadorRepository utilizadores, FrotaService frota) {
+    public ReservaService(ReservaRepository reservas, UtilizadorRepository utilizadores, FrotaService frota,
+            PagamentoService pagamentos) {
         this.reservas = reservas;
         this.utilizadores = utilizadores;
         this.frota = frota;
+        this.pagamentos = pagamentos;
     }
 
     @Transactional
@@ -38,7 +42,14 @@ public class ReservaService {
                 .orElseThrow(() -> new NaoEncontradoException("Viatura " + viaturaId + " não existe no Odoo"));
 
         if (reservas.existsByUtilizadorIdAndEstadoIn(utilizadorId, ATIVAS)) {
-            throw new RegraNegocioException("O utilizador já tem uma reserva ativa");
+            throw new RegraNegocioException("Já tem uma reserva ativa");
+        }
+        if (pagamentos.meioDe(utilizadorId).isEmpty()) {
+            throw new RegraNegocioException("Associe um cartão ou uma conta bancária antes de reservar");
+        }
+        if (pagamentos.temDivida(utilizadorId)) {
+            throw new RegraNegocioException("Tem pagamentos em dívida (" + pagamentos.valorEmDivida(utilizadorId)
+                    + " €). Atualize o meio de pagamento para voltar a reservar");
         }
         if (!viatura.disponivel()) {
             throw new RegraNegocioException("A viatura " + viatura.matricula() + " não está disponível ("
@@ -58,14 +69,44 @@ public class ReservaService {
         return ReservaDto.de(buscar(id));
     }
 
+    /** A reserva, se pertencer ao utilizador (senão "não existe", para não revelar reservas de outros). */
+    @Transactional(readOnly = true)
+    public ReservaDto obterDoUtilizador(long id, long utilizadorId) {
+        return ReservaDto.de(doDono(id, utilizadorId));
+    }
+
+    /** Reserva ativa do utilizador (para a app abrir o ecrã "Em viagem"), ou null. */
+    @Transactional(readOnly = true)
+    public ReservaDto ativa(long utilizadorId) {
+        return reservas.findByUtilizadorIdOrderByCriadaEmDesc(utilizadorId).stream()
+                .filter(Reserva::ativa)
+                .findFirst()
+                .map(ReservaDto::de)
+                .orElse(null);
+    }
+
+    /** Garante que a reserva existe e é do utilizador. */
+    @Transactional(readOnly = true)
+    public void verificarDono(long id, long utilizadorId) {
+        doDono(id, utilizadorId);
+    }
+
+    private Reserva doDono(long id, long utilizadorId) {
+        Reserva r = buscar(id);
+        if (!r.getUtilizador().getId().equals(utilizadorId)) {
+            throw new NaoEncontradoException("Reserva " + id + " não existe");
+        }
+        return r;
+    }
+
     @Transactional(readOnly = true)
     public List<ReservaDto> doUtilizador(long utilizadorId) {
         return reservas.findByUtilizadorIdOrderByCriadaEmDesc(utilizadorId).stream().map(ReservaDto::de).toList();
     }
 
     @Transactional
-    public ReservaDto cancelar(long id) {
-        Reserva r = buscar(id);
+    public ReservaDto cancelar(long id, long utilizadorId) {
+        Reserva r = doDono(id, utilizadorId);
         if (r.getEstado() != EstadoReserva.RESERVADA) {
             throw new RegraNegocioException("Só é possível cancelar reservas que ainda não começaram");
 

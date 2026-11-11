@@ -97,6 +97,22 @@ public class FaturacaoService {
         return ReservaDto.de(r);
     }
 
+    /** Diagrama 1: ao criar conta, cria também o cliente no Moloni. Se falhar, é criado na primeira fatura. */
+    public void registarClienteSemFalhar(long utilizadorId) {
+        try {
+            Utilizador u = utilizadores.findById(utilizadorId).orElse(null);
+            if (u == null || u.getMoloniClienteId() != null) {
+                return;
+            }
+            synchronized (this) {
+                carregarConfiguracao();
+                garantirCliente(u);
+            }
+        } catch (RuntimeException e) {
+            log.warn("Cliente {} não criado no Moloni: {}", utilizadorId, e.getMessage());
+        }
+    }
+
     /** Usado no fim da viagem: se a faturação falhar, a viagem termina na mesma. */
     public void faturarSemFalhar(long reservaId) {
         try {

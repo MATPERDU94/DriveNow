@@ -1,47 +1,72 @@
 @startuml 3 - Pagamento e Faturação
-title DriveNow - 3. Pagamento e faturação
+title DriveNow - 3. Pagamento e faturação (v2)
 
 |Cliente|
-|App DriveNow|
+|App (SAP Build Apps)|
+|Backend|
+|n8n|
 |SAP|
 |Moloni|
 
-|App DriveNow|
+|Backend|
 start
-:Receber duração da reserva;
-:Calcular preço\n(minutos × preço por minuto + valor de entrada);
+:Receber fim da viagem (ou cancelamento);
+:Calcular valor\n(taxa de entrada + minutos × preço/minuto\n+ penalizações do relato de fim);
 
 repeat
-  |App DriveNow|
-  :Cobrar meio de pagamento associado;
+  |Backend|
+  :Cobrar meio de pagamento associado\n(pagamento simulado);
   if (Pagamento aprovado?) then (sim)
   else (não)
     :Registar dívida pendente\ne bloquear novas reservas;
+    |App (SAP Build Apps)|
+    :Avisar o cliente da dívida;
     |Cliente|
-    :Atualizar meio de pagamento;
+    :Atualizar meio de pagamento\n(ecrã Perfil);
+    |Backend|
+    :Cobrar de novo a dívida\n(automaticamente);
   endif
-  |App DriveNow|
 repeat while (Pagamento em falta?) is (sim) not (não)
 
-|SAP|
-:Registar venda (Sales Order);
+fork
+  |App (SAP Build Apps)|
+  :Mostrar resumo da viagem\n(valor sem IVA, IVA 23%, total,\nmeio de pagamento);
+fork again
+  |Backend|
+  :Enviar evento "viagem paga"\n(webhook para o n8n);
 
-repeat
-  |Moloni|
-  :Emitir fatura-recibo;
-  |App DriveNow|
-  :Verificar resposta do Moloni;
-  backward:Marcar "pendente de faturação"\ne tentar de novo mais tarde;
-repeat while (Fatura emitida?) is (não) not (sim)
+  |n8n|
+  :Receber dados da viagem e do cliente;
 
-|Moloni|
-:Disponibilizar PDF da fatura;
+  |SAP|
+  :Registar venda\n(serviço a confirmar com o docente);
 
-|App DriveNow|
-:Enviar fatura por email;
+  repeat
+    |Moloni|
+    :Obter token e garantir o cliente;
+    :Emitir fatura-recibo\n(rascunho; finalizada quando permitido);
+    |n8n|
+    :Verificar resposta do Moloni;
+    backward:Ramo de erro: marcar "pendente de faturação"\ne tentar de novo mais tarde;
+  repeat while (Fatura emitida?) is (não) not (sim)
 
-|Cliente|
-:Receber fatura;
+  |n8n|
+  :Enviar ID e estado da fatura ao backend;
+  |Backend|
+  :Guardar fatura na reserva\n(ecrã "Viagens e faturas");
+
+  |n8n|
+  if (Fatura finalizada?) then (sim)
+    |Moloni|
+    :Disponibilizar PDF da fatura;
+    |n8n|
+    :Enviar fatura por email;
+    |Cliente|
+    :Receber fatura;
+  else (não, rascunho)
+  endif
+end fork
+
 stop
 
 @enduml

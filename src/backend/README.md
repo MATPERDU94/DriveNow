@@ -15,7 +15,9 @@ src/main/java/pt/drivenow/
 ├── frota/         GET /api/viaturas (Odoo + posição GPS + disponibilidade)
 ├── localizacao/   posição GPS de cada viatura (atualizada no fim de cada viagem)
 ├── danos/         GET /api/danos/tipos (tabela de custos do Odoo)
-├── utilizadores/  registo de utilizadores
+├── auth/          criar conta, login e token (JWT)
+├── utilizadores/  perfil do utilizador (/api/me)
+├── pagamentos/    meio de pagamento e cobranças (simuladas)
 ├── reservas/      reservas e estado da viagem
 ├── relatos/       relatos de início/fim + atribuição de danos e penalizações
 └── common/        erros da API
@@ -57,51 +59,59 @@ Quando aparecer `Started DriveNowApplication`, a API está em **http://localhost
 
 ## 4. Testar o fluxo completo
 
+O script `scripts/testar_fluxo.sh` corre tudo de uma vez: cria duas contas (uma com um cartão que aprova e outra com um que recusa), faz login, faz viagens, mostra os pagamentos, a dívida que bloqueia reservas e o pagamento da dívida depois de atualizar o cartão.
+
 ```bash
-# Estado da API
-curl localhost:8080/actuator/health
-
-# Frota com coordenadas, e tabela de danos (vem do Odoo)
-curl localhost:8080/api/viaturas
-# Viaturas livres a menos de 1 km do Largo do Toural, da mais próxima para a mais afastada
-curl "localhost:8080/api/viaturas?lat=41.4417&lng=-8.2955&raio=1&disponiveis=true"
-curl localhost:8080/api/danos/tipos
-
-# Criar um utilizador
-curl -X POST localhost:8080/api/utilizadores -H "Content-Type: application/json" \
-  -d '{"nome":"Ana Silva","email":"ana@exemplo.pt","nif":"123456789"}'
-
-# Reservar uma viatura (viaturaId = "id" de /api/viaturas)
-curl -X POST localhost:8080/api/reservas -H "Content-Type: application/json" \
-  -d '{"utilizadorId":1,"viaturaId":1}'
-
-# Relato de início: começa a viagem (danos que já existiam não são cobrados)
-curl -X POST localhost:8080/api/reservas/1/relatos -H "Content-Type: application/json" \
-  -d '{"tipo":"INICIO","observacoes":"Carro limpo","danos":[]}'
-
-# Relato de fim: termina a viagem, guarda onde o carro ficou e a quilometragem,
-# calcula o preço e cobra os danos novos (tipoDanoId = "id" de /api/danos/tipos)
-curl -X POST localhost:8080/api/reservas/1/relatos -H "Content-Type: application/json" \
-  -d '{"tipo":"FIM","observacoes":"Risquei ao estacionar","latitude":41.4525,"longitude":-8.2898,"quilometragem":3912,"danos":[{"tipoDanoId":3,"descricao":"porta traseira esquerda"}]}'
-
-# Ver a reserva (minutos, valorViagem, totalPenalizacoes, total) e os relatos
-curl localhost:8080/api/reservas/1
-curl localhost:8080/api/reservas/1/relatos
+cd ~/drivenow/src/backend
+bash scripts/testar_fluxo.sh
 ```
 
-Depois do relato de fim, o dano aparece no Odoo em **Frota → Danos → Registo de danos**.
+Para testar à mão com o `curl`, primeiro faz-se login e guarda-se o token:
+
+```bash
+TOKEN=$(curl -s -X POST localhost:8080/api/auth/login -H "Content-Type: application/json" \
+  -d '{"email":"o_teu_email","password":"a_tua_password"}' | python3 -c "import sys,json;print(json.load(sys.stdin)['token'])")
+curl -s localhost:8080/api/me -H "Authorization: Bearer $TOKEN" | python3 -m json.tool
+```
+
+## Contas e login
+
+- `POST /api/auth/registar` cria a conta com os dados pessoais **e** o meio de pagamento (ecrã "Criar conta"):
+  ```json
+  {"nome": "Ana Silva", "email": "ana@exemplo.pt", "nif": "291000010", "telefone": "912345678",
+   "password": "segredo123", "aceitaTermos": true,
+   "pagamento": {"tipo": "CARTAO", "titular": "ANA SILVA", "numero": "4242 4242 4242 4242", "validade": "08/28", "cvv": "123"}}
+  ```
+  ou, com conta bancária: `"pagamento": {"tipo": "CONTA_BANCARIA", "titular": "Ana Silva", "iban": "PT50 0002 0123 1234 5678 9015 4"}`.
+- `POST /api/auth/login` com `{"email", "password"}` devolve `{"token", "expiraEm", "utilizador"}`.
+- Todos os outros pedidos (exceto o mapa e a tabela de danos) levam o cabeçalho `Authorization: Bearer {token}`. Cada cliente só vê e mexe nas suas reservas.
+- A password é guardada com BCrypt. O NIF tem de ser válido (dígito de controlo).
+
+## Pagamentos (simulados)
+
+- Guarda-se só o titular, a marca, os **últimos 4 dígitos** e a validade. O número completo, o IBAN completo e o CVV nunca são guardados.
+- No fim da viagem (ou ao cancelar), o valor é cobrado logo ao meio de pagamento.
+- **Cartões de teste:** `4242 4242 4242 4242` aprova; `4000 0000 0000 0002` recusa sempre. Um cartão expirado também é recusado.
+- Uma cobrança recusada fica **em dívida** e **bloqueia novas reservas**. Ao alterar o meio de pagamento (`PUT /api/me/pagamento`), as dívidas são cobradas de novo automaticamente.
+- A **fatura só é emitida depois de o pagamento ser aprovado** (diagrama 3).
+- Penalizações cobradas ao condutor anterior têm uma cobrança e uma fatura à parte.
 
 ## Endpoints
 
 | Método | Caminho | Descrição |
 |---|---|---|
+| POST | `/api/auth/registar` | Criar conta (dados + meio de pagamento) → token |
+| POST | `/api/auth/login` | Login → token |
+| GET / PUT | `/api/me` | Ver / alterar os dados pessoais |
+| PUT | `/api/me/pagamento` | Alterar o meio de pagamento (paga as dívidas pendentes) |
+| GET | `/api/me/cobrancas` | Cobranças do utilizador |
+| POST | `/api/me/cobrancas/pagar` | Tentar pagar de novo as dívidas |
 | GET | `/api/viaturas[?lat=&lng=&raio=&disponiveis=true]` | Frota com coordenadas; com lat/lng, ordenada por distância (km) |
 | GET | `/api/viaturas/{id}` | Uma viatura |
 | GET | `/api/danos/tipos` | Tabela de custos de danos (Odoo) |
-| POST | `/api/utilizadores` | Criar utilizador |
-| GET | `/api/utilizadores`, `/api/utilizadores/{id}` | Consultar utilizadores |
-| POST | `/api/reservas` | Criar reserva `{utilizadorId, viaturaId}` |
-| GET | `/api/reservas?utilizadorId=1` | Histórico de reservas |
+| POST | `/api/reservas` | Reservar `{viaturaId}` (o cliente vem do token) |
+| GET | `/api/reservas` | Histórico de reservas do cliente |
+| GET | `/api/reservas/ativa` | Reserva ativa (204 se não houver) |
 | GET | `/api/reservas/{id}` | Uma reserva |
 | POST | `/api/reservas/{id}/cancelar` | Cancelar (só antes de começar) |
 | POST | `/api/reservas/{id}/faturar` | Emitir (ou repetir) a fatura-recibo no Moloni |
@@ -159,9 +169,8 @@ Para cada dano assinalado num relato:
 ## Próximos passos
 
 - `SapClient` (Business Partner, Sales Order)
-- Autenticação (registo e login)
 - Documentação dos carros (seguro, inspeção, IUC) e alertas de validade (diagrama 5)
-- Cobrança (meios de pagamento e dívidas pendentes)
+- Envio da fatura por email
 
 ## Comandos úteis
 

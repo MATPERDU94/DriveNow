@@ -27,6 +27,11 @@ public class Utilizador {
 
     private String telefone;
 
+    /** Password guardada com BCrypt (nunca em texto). */
+    private String passwordHash;
+
+    private Instant termosAceitesEm;
+
     /** Id do Business Partner no SAP (preenchido pelo SapClient). */
     private String sapBusinessPartnerId;
 
@@ -46,11 +51,32 @@ public class Utilizador {
         this.telefone = telefone;
     }
 
+    public void definirPassword(String hash) {
+        this.passwordHash = hash;
+    }
+
+    public void aceitarTermos() {
+        this.termosAceitesEm = Instant.now();
+    }
+
+    /** Atualiza os dados pessoais; se o NIF mudar, o cliente no Moloni é criado de novo. */
+    public void atualizarDados(String nome, String email, String nif, String telefone) {
+        if (nif != null && !nif.equals(this.nif)) {
+            this.moloniClienteId = null;
+        }
+        this.nome = nome;
+        this.email = email;
+        this.nif = nif;
+        this.telefone = telefone;
+    }
+
     public Long getId() { return id; }
     public String getNome() { return nome; }
     public String getEmail() { return email; }
     public String getNif() { return nif; }
     public String getTelefone() { return telefone; }
+    public String getPasswordHash() { return passwordHash; }
+    public Instant getTermosAceitesEm() { return termosAceitesEm; }
     public String getSapBusinessPartnerId() { return sapBusinessPartnerId; }
     public Long getMoloniClienteId() { return moloniClienteId; }
     public Instant getCriadoEm() { return criadoEm; }

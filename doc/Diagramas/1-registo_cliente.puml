@@ -1,8 +1,10 @@
 @startuml 1 - Registo do Cliente
-title DriveNow - 1. Registo do cliente
+title DriveNow - 1. Registo do cliente (v2)
 
 |Cliente|
-|App DriveNow|
+|App (SAP Build Apps)|
+|Backend|
+|n8n|
 |SAP|
 |Moloni|
 
@@ -12,35 +14,49 @@ start
 
 repeat
   |Cliente|
-  :Preencher dados\n(nome, email, NIF, password);
-  |App DriveNow|
-  :Validar dados e NIF;
+  :Preencher dados (nome, email, NIF,\ntelemóvel, password), associar cartão\nou conta bancária e aceitar os termos;
+  |App (SAP Build Apps)|
+  :Enviar pedido de registo;
+  |Backend|
+  :Validar dados, NIF\ne meio de pagamento;
 repeat while (Dados válidos?) is (não) not (sim)
 
-repeat
-  |Cliente|
-  :Associar cartão ou conta bancária;
-  |App DriveNow|
-  :Validar meio de pagamento;
-repeat while (Meio de pagamento válido?) is (não) not (sim)
-
-|App DriveNow|
-:Guardar utilizador na base de dados;
+|Backend|
+:Guardar utilizador\n(password encriptada) e meio de pagamento\n(só os últimos 4 dígitos);
+:Ativar conta e devolver token de sessão;
 
 fork
-  |SAP|
-  :Criar Business Partner;
+  |App (SAP Build Apps)|
+  :Guardar token e abrir o mapa;
+  |Cliente|
+  :Conta criada, pode reservar;
 fork again
-  |Moloni|
-  :Criar cliente\n(nome, NIF, email);
+  |Backend|
+  :Enviar evento "cliente registado"\n(webhook para o n8n);
+  |n8n|
+  fork
+    |SAP|
+    :Obter CSRF token;
+    :Criar Business Partner\n(MD_BUSINESSPARTNER_SRV, draft);
+  fork again
+    |Moloni|
+    :Procurar cliente pelo NIF;
+    if (Já existe?) then (não)
+      :Criar cliente\n(nome, NIF, email);
+    else (sim)
+    endif
+  end fork
+  |n8n|
+  if (Ambos criados?) then (sim)
+    :Enviar IDs do SAP e do Moloni\nao backend;
+    |Backend|
+    :Guardar IDs do SAP e do Moloni;
+  else (não)
+    |n8n|
+    :Registar erro e tentar de novo\nmais tarde (ramo de erro);
+  endif
 end fork
 
-|App DriveNow|
-:Guardar IDs do SAP e do Moloni;
-:Ativar conta;
-
-|Cliente|
-:Receber confirmação da conta;
 stop
 
 @enduml

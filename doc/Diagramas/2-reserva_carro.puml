@@ -1,31 +1,36 @@
 @startuml 2 - Reserva e Viagem
-title DriveNow - 2. Reserva e viagem
+title DriveNow - 2. Reserva e viagem (v2)
 
 |Cliente|
-|App DriveNow|
-|SAP|
+|App (SAP Build Apps)|
+|Backend|
 |Odoo|
+|n8n|
 
 |Cliente|
 start
 :Fazer login na app;
 
-|App DriveNow|
-:Obter localização do cliente;
-
-fork
-  |SAP|
-  :Devolver dados da frota;
-fork again
-  |Odoo|
-  :Devolver carros indisponíveis;
-end fork
-
-|App DriveNow|
-:Excluir carros indisponíveis;
-:Calcular carros mais próximos;
+|App (SAP Build Apps)|
+:Obter localização GPS do cliente;
+:Pedir carros próximos ao backend;
 
 repeat
+  |Backend|
+  fork
+    |Odoo|
+    :Devolver frota e tarifário\n(taxa de entrada + preço/minuto);
+  fork again
+    |Odoo|
+    :Devolver carros indisponíveis\n(em reparação, documentos caducados\nou manutenção em atraso);
+  fork again
+    |Backend|
+    :Ler posições GPS\ne reservas ativas;
+  end fork
+  |Backend|
+  :Excluir carros indisponíveis\ne já reservados;
+  :Ordenar por distância ao cliente;
+  |App (SAP Build Apps)|
   :Mostrar carros no mapa;
   backward:Aguardar e atualizar o mapa;
 repeat while (Há carro disponível?) is (não) not (sim)
@@ -33,41 +38,53 @@ repeat while (Há carro disponível?) is (não) not (sim)
 |Cliente|
 :Escolher carro e reservar;
 
-|App DriveNow|
-:Bloquear carro;
+|Backend|
+if (Pode reservar?\n(sem reserva ativa, com meio de pagamento,\nsem dívidas, carro disponível no Odoo)) then (não)
+  |App (SAP Build Apps)|
+  :Mostrar o motivo\n(ex.: pagamento em dívida);
+  stop
+else (sim)
+endif
+
+|Backend|
+:Bloquear carro e guardar os preços da reserva;
 :Iniciar temporizador;
 
 |Cliente|
 if (Cancelar reserva?) then (não)
   :Indicar o estado do carro antes da viagem\n("sem danos" ou tipo de dano + descrição);
-  |App DriveNow|
+  |Backend|
   :Guardar relato de início\nassociado à viagem;
   if (Dano reportado?) then (sim)
-    :Iniciar processo de danos (diagrama 4);
+    :Iniciar processo de danos (diagrama 4)\n(responsável: condutor anterior);
   endif
 
   |Cliente|
   :Desbloquear carro e conduzir;
+  |App (SAP Build Apps)|
+  :Mostrar tempo e valor até agora;
+  |Cliente|
   :Terminar viagem na app;
   :Indicar o estado do carro no fim da viagem\n("sem danos" ou tipo de dano + descrição);
 
-  |App DriveNow|
-  :Guardar relato de fim\nassociado à viagem;
+  |Backend|
+  :Guardar relato de fim, localização final\ne quilometragem;
   if (Dano reportado?) then (sim)
-    :Iniciar processo de danos (diagrama 4);
+    :Iniciar processo de danos (diagrama 4)\n(responsável: o próprio cliente);
   endif
-  :Ler quilometragem do carro;
-
+  :Enviar evento "viagem terminada"\n(webhook para o n8n);
+  |n8n|
+  :Pedir atualização da quilometragem;
   |Odoo|
   :Atualizar quilometragem do carro;
 else (sim)
 endif
 
-|App DriveNow|
+|Backend|
 :Parar temporizador;
 :Libertar carro\n(guardar localização final);
-:Guardar duração da reserva;
-:Iniciar processo de pagamento;
+:Calcular valor\n(taxa de entrada + minutos × preço/minuto\n+ penalizações);
+:Iniciar processo de pagamento (diagrama 3);
 stop
 
 @enduml
