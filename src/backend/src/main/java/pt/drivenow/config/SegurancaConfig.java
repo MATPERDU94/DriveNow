@@ -79,7 +79,7 @@ public class SegurancaConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource(@Value("${drivenow.cors-origins}") List<String> origens) {
         CorsConfiguration c = new CorsConfiguration();
-        c.setAllowedOrigins(origens);
+        c.setAllowedOriginPatterns(origens);
         c.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         c.setAllowedHeaders(List.of("*"));
         UrlBasedCorsConfigurationSource fonte = new UrlBasedCorsConfigurationSource();
