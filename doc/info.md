@@ -1,4 +1,4 @@
-# Perguntas para o store:
+# Perguntas para a renião do 11/11/2026:
 
 
 # 0. explicar as alterações efetuadas:
