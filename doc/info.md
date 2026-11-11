@@ -5,7 +5,7 @@
     - retirar os hubs e so na cidade de Guimarães
     - retirar as reservas (acabou os slots)
     - utilização de GPS, e ver os carros mais pertos
-    - **questao é**: se o objetivo é procurar o carro mais perto, nao fazia sentido ter tantas variedades de carros
+    - questao de grupo: se o objetivo é procurar o carro mais perto, nao fazia sentido ter tantas variedades de carros
     - implementamos o odoo comunity (via ubuntu)
     - 
 
