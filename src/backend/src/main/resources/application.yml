@@ -30,6 +30,10 @@ moloni:
   # IVA incluído nos preços do tarifário (%)
   iva: ${MOLONI_IVA:23}
 
+n8n:
+  # Endereço do n8n (orquestração). Vazio = o backend fala diretamente com o Odoo
+  url: ${N8N_URL:}
+
 drivenow:
   # Limite das penalizações por viagem (€)
   franquia: ${DRIVENOW_FRANQUIA:1000}

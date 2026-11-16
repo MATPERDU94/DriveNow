@@ -1,0 +1,82 @@
+{
+  "name": "DriveNow - Viagem terminada",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "viagem-terminada",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "a043ec1d-66b4-4545-99e7-a731850e1f35",
+      "name": "Webhook",
+      "webhookId": "2be049c2-4641-4ce6-a096-2dbd19b16041"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8069/json/2/fleet.vehicle.odometer/create",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Odoo-Database",
+              "value": "drivenow"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"vals_list\":[{\"vehicle_id\": {{ $json.body.viaturaId }}, \"value\": {{ $json.body.quilometragem }}}]}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        0
+      ],
+      "id": "48d7576a-8120-499e-93ad-d27eb5b0e7fb",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "wrL7BJzekttu4yWp",
+          "name": "Header Auth account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "3a1d5661-52a1-46f1-9f80-f5845254eb06",
+  "meta": {
+    "instanceId": "4db23240313abb16bf45adf669f886736f64c0d1d38d163660e46471eae6c0fb"
+  },
+  "nodeGroups": [],
+  "id": "zYUCWsC96I3qf2Am",
+  "tags": []
+}

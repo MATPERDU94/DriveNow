@@ -2,7 +2,9 @@ package pt.drivenow.relatos;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -14,6 +16,7 @@ import pt.drivenow.danos.TipoDanoDto;
 import pt.drivenow.frota.FrotaService;
 import pt.drivenow.frota.ViaturaDto;
 import pt.drivenow.localizacao.LocalizacaoService;
+import pt.drivenow.n8n.N8nClient;
 import pt.drivenow.reservas.EstadoReserva;
 import pt.drivenow.reservas.Reserva;
 import pt.drivenow.reservas.ReservaRepository;
@@ -40,10 +43,11 @@ public class RelatoService {
     private final DanoService danos;
     private final LocalizacaoService localizacao;
     private final FrotaService frota;
+    private final N8nClient n8n;
     private final BigDecimal franquia;
 
     public RelatoService(RelatoRepository relatos, ReservaService reservas, ReservaRepository reservaRepository,
-            DanoService danos, LocalizacaoService localizacao, FrotaService frota,
+            DanoService danos, LocalizacaoService localizacao, FrotaService frota, N8nClient n8n,
             @Value("${drivenow.franquia:1000}") BigDecimal franquia) {
         this.relatos = relatos;
         this.reservas = reservas;
@@ -51,6 +55,7 @@ public class RelatoService {
         this.danos = danos;
         this.localizacao = localizacao;
         this.frota = frota;
+        this.n8n = n8n;
         this.franquia = franquia.setScale(2, RoundingMode.HALF_UP);
     }
 
@@ -131,7 +136,18 @@ public class RelatoService {
             reserva.terminarViagem(cobrado);
             localizacao.atualizar(reserva.getViaturaOdooId(), latitude, longitude);
             if (quilometragem != null) {
-                frota.registarQuilometragem(reserva.getViaturaOdooId(), quilometragem);
+                // Diagrama 2: o evento "viagem terminada" vai para o n8n, que atualiza a quilometragem no Odoo.
+                // Se o n8n não estiver configurado ou não responder, o backend regista-a diretamente.
+                Map<String, Object> evento = new LinkedHashMap<>();
+                evento.put("reservaId", reserva.getId());
+                evento.put("viaturaId", reserva.getViaturaOdooId());
+                evento.put("matricula", reserva.getMatricula());
+                evento.put("quilometragem", quilometragem);
+                evento.put("latitude", latitude);
+                evento.put("longitude", longitude);
+                if (!n8n.enviar("viagem-terminada", evento)) {
+                    frota.registarQuilometragem(reserva.getViaturaOdooId(), quilometragem);
+                }
             }
         }
         return RelatoDto.de(relato);
