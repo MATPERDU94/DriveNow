@@ -1,0 +1,967 @@
+{
+  "info": {
+    "_postman_id": "fc5e2c0f-855c-413d-8c44-6ad0e9f8edaa",
+    "name": "DriveNow - Integrações (SAP e Moloni)",
+    "description": "Projeto DriveNow (IAIE). Chamadas de teste ao SAP (servidor s20, client 305, Basic Auth) e ao Moloni (Aplicações Nativas). Antes de usar, escolher o environment 'DriveNow' e preencher as credenciais em Current value.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "60106342",
+    "_collection_link": "https://go.postman.co/collection/60106342-fc5e2c0f-855c-413d-8c44-6ad0e9f8edaa?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "SAP (OData)",
+      "item": [
+        {
+          "name": "1. Business Partners (os 5 primeiros)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Ligação ao SAP OK (200)', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "sap-client",
+                "value": "{{sap_client}}"
+              }
+            ],
+            "url": {
+              "raw": "{{sap_url}}sap/opu/odata/sap/MD_BUSINESSPARTNER_SRV/I_BusinessPartner?$select=BusinessPartner,FirstName,LastName,CreationDate&$top=5&$format=json",
+              "host": [
+                "{{sap_url}}sap"
+              ],
+              "path": [
+                "opu",
+                "odata",
+                "sap",
+                "MD_BUSINESSPARTNER_SRV",
+                "I_BusinessPartner"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "BusinessPartner,FirstName,LastName,CreationDate"
+                },
+                {
+                  "key": "$top",
+                  "value": "5"
+                },
+                {
+                  "key": "$format",
+                  "value": "json"
+                }
+              ]
+            },
+            "description": "Teste de ligação: lê 5 Business Partners. Se der 200 OK, o utilizador, a password e o sap-client estão certos."
+          },
+          "response": []
+        },
+        {
+          "name": "2. Business Partners criados por mim",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "sap-client",
+                "value": "{{sap_client}}"
+              }
+            ],
+            "url": {
+              "raw": "{{sap_url}}sap/opu/odata/sap/MD_BUSINESSPARTNER_SRV/I_BusinessPartner?$filter=CreatedByUser eq '{{sap_user}}'&$select=BusinessPartner,FirstName,LastName,CreationDate&$orderby=CreationDate desc&$top=10&$format=json",
+              "host": [
+                "{{sap_url}}sap"
+              ],
+              "path": [
+                "opu",
+                "odata",
+                "sap",
+                "MD_BUSINESSPARTNER_SRV",
+                "I_BusinessPartner"
+              ],
+              "query": [
+                {
+                  "key": "$filter",
+                  "value": "CreatedByUser eq '{{sap_user}}'"
+                },
+                {
+                  "key": "$select",
+                  "value": "BusinessPartner,FirstName,LastName,CreationDate"
+                },
+                {
+                  "key": "$orderby",
+                  "value": "CreationDate desc"
+                },
+                {
+                  "key": "$top",
+                  "value": "10"
+                },
+                {
+                  "key": "$format",
+                  "value": "json"
+                }
+              ]
+            },
+            "description": "Exemplo do Guia Tecnológico (ponto 4): os 10 Business Partners mais recentes criados pelo meu utilizador LEARN."
+          },
+          "response": []
+        },
+        {
+          "name": "3. Estrutura do serviço Business Partner ($metadata)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "sap-client",
+                "value": "{{sap_client}}"
+              }
+            ],
+            "url": {
+              "raw": "{{sap_url}}sap/opu/odata/sap/MD_BUSINESSPARTNER_SRV/$metadata",
+              "host": [
+                "{{sap_url}}sap"
+              ],
+              "path": [
+                "opu",
+                "odata",
+                "sap",
+                "MD_BUSINESSPARTNER_SRV",
+                "$metadata"
+              ]
+            },
+            "description": "Lista as entidades e os campos do serviço. Usar para saber que campos o C_BusinessPartner aceita no POST."
+          },
+          "response": []
+        },
+        {
+          "name": "3. Estrutura do serviço Business Partner ($metadata) Copy 2",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "sap-client",
+                "value": "{{sap_client}}"
+              }
+            ],
+            "url": {
+              "raw": "{{sap_url}}sap/opu/odata/sap/SD_SALES_ORDER_IMPORT/$metadata",
+              "host": [
+                "{{sap_url}}sap"
+              ],
+              "path": [
+                "opu",
+                "odata",
+                "sap",
+                "SD_SALES_ORDER_IMPORT",
+                "$metadata"
+              ]
+            },
+            "description": "Lista as entidades e os campos do serviço. Usar para saber que campos o C_BusinessPartner aceita no POST."
+          },
+          "response": []
+        },
+        {
+          "name": "3. Estrutura do serviço Business Partner ($metadata) Copy",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "sap-client",
+                "value": "{{sap_client}}"
+              }
+            ],
+            "url": {
+              "raw": "{{sap_url}}sap/opu/odata/sap/LORD_ODATA_ORDER_SRV/$metadata",
+              "host": [
+                "{{sap_url}}sap"
+              ],
+              "path": [
+                "opu",
+                "odata",
+                "sap",
+                "LORD_ODATA_ORDER_SRV",
+                "$metadata"
+              ]
+            },
+            "description": "Lista as entidades e os campos do serviço. Usar para saber que campos o C_BusinessPartner aceita no POST."
+          },
+          "response": []
+        },
+        {
+          "name": "4. Serviço UI_PRODUCTLIST (entidades disponíveis)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "sap-client",
+                "value": "{{sap_client}}"
+              }
+            ],
+            "url": {
+              "raw": "{{sap_url}}sap/opu/odata/sap/UI_PRODUCTLIST/?$format=json",
+              "host": [
+                "{{sap_url}}sap"
+              ],
+              "path": [
+                "opu",
+                "odata",
+                "sap",
+                "UI_PRODUCTLIST",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "$format",
+                  "value": "json"
+                }
+              ]
+            },
+            "description": "Lista as entidades do serviço de produtos referido pelo professor (Global Bike)."
+          },
+          "response": []
+        },
+        {
+          "name": "5. Catálogo de serviços OData (procurar vendas)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "sap-client",
+                "value": "{{sap_client}}"
+              }
+            ],
+            "url": {
+              "raw": "{{sap_url}}sap/opu/odata/IWFND/CATALOGSERVICE;v=2/ServiceCollection?$filter=substringof('ORDER',TechnicalServiceName)&$select=TechnicalServiceName,Title&$format=json",
+              "host": [
+                "{{sap_url}}sap"
+              ],
+              "path": [
+                "opu",
+                "odata",
+                "IWFND",
+                "CATALOGSERVICE;v=2",
+                "ServiceCollection"
+              ],
+              "query": [
+                {
+                  "key": "$filter",
+                  "value": "substringof('ORDER',TechnicalServiceName)"
+                },
+                {
+                  "key": "$select",
+                  "value": "TechnicalServiceName,Title"
+                },
+                {
+                  "key": "$format",
+                  "value": "json"
+                }
+              ]
+            },
+            "description": "Procura serviços com 'SALES' no nome (para registar vendas). Pode não ter permissão; nesse caso usar o Service Center do BAS."
+          },
+          "response": []
+        },
+        {
+          "name": "6. Obter CSRF token (antes de qualquer POST)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const t = pm.response.headers.get('x-csrf-token');",
+                  "pm.environment.set('csrf_token', t);",
+                  "pm.test('CSRF token recebido', () => pm.expect(t).to.be.ok);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "sap-client",
+                "value": "{{sap_client}}"
+              },
+              {
+                "key": "X-CSRF-Token",
+                "value": "Fetch"
+              }
+            ],
+            "url": {
+              "raw": "{{sap_url}}sap/opu/odata/sap/MD_BUSINESSPARTNER_SRV/",
+              "host": [
+                "{{sap_url}}sap"
+              ],
+              "path": [
+                "opu",
+                "odata",
+                "sap",
+                "MD_BUSINESSPARTNER_SRV",
+                ""
+              ]
+            },
+            "description": "Passo obrigatório antes de escrever no SAP (Guia, ponto 3). Guarda o token na variável csrf_token; o Postman guarda também os cookies da sessão."
+          },
+          "response": []
+        },
+        {
+          "name": "7. Criar Business Partner (rascunho) - AJUSTAR CAMPOS",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "sap-client",
+                "value": "{{sap_client}}"
+              },
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"BusinessPartnerCategory\": \"1\",\n  \"FirstName\": \"Teste\",\n  \"LastName\": \"DriveNow\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sap_url}}sap/opu/odata/sap/MD_BUSINESSPARTNER_SRV/C_BusinessPartner",
+              "host": [
+                "{{sap_url}}sap"
+              ],
+              "path": [
+                "opu",
+                "odata",
+                "sap",
+                "MD_BUSINESSPARTNER_SRV",
+                "C_BusinessPartner"
+              ]
+            },
+            "description": "Cria um Business Partner em modo draft (Guia, ponto 3). Correr primeiro o pedido 6. Os campos do corpo podem ter de ser ajustados conforme o $metadata (pedido 3)."
+          },
+          "response": []
+        },
+        {
+          "name": "7b. Adicionar papel ao BP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "sap-client",
+                "value": "{{sap_client}}"
+              },
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"BusinessPartnerRole\": \"FLCU01\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sap_url}}sap/opu/odata/sap/MD_BUSINESSPARTNER_SRV/C_BusinessPartner(BusinessPartner='',DraftUUID=guid'fa492a64-b120-1fd1-b8bd-a7a0f8cb6000',IsActiveEntity=false)/to_BusinessPartnerRole",
+              "host": [
+                "{{sap_url}}sap"
+              ],
+              "path": [
+                "opu",
+                "odata",
+                "sap",
+                "MD_BUSINESSPARTNER_SRV",
+                "C_BusinessPartner(BusinessPartner='',DraftUUID=guid'fa492a64-b120-1fd1-b8bd-a7a0f8cb6000',IsActiveEntity=false)",
+                "to_BusinessPartnerRole"
+              ]
+            },
+            "description": "Cria um Business Partner em modo draft (Guia, ponto 3). Correr primeiro o pedido 6. Os campos do corpo podem ter de ser ajustados conforme o $metadata (pedido 3)."
+          },
+          "response": []
+        },
+        {
+          "name": "7c. Preencher papel",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "sap-client",
+                "value": "{{sap_client}}"
+              },
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"BusinessPartnerRoleForEdit\": \"FLCU01\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sap_url}}sap/opu/odata/sap/MD_BUSINESSPARTNER_SRV/C_BusinessPartnerRole(BusinessPartner='',BusinessPartnerRole='FLCU01',DraftUUID=guid'fa492a64-b120-1fd1-b8bd-d4b368da6000',IsActiveEntity=false)",
+              "host": [
+                "{{sap_url}}sap"
+              ],
+              "path": [
+                "opu",
+                "odata",
+                "sap",
+                "MD_BUSINESSPARTNER_SRV",
+                "C_BusinessPartnerRole(BusinessPartner='',BusinessPartnerRole='FLCU01',DraftUUID=guid'fa492a64-b120-1fd1-b8bd-d4b368da6000',IsActiveEntity=false)"
+              ]
+            },
+            "description": "Cria um Business Partner em modo draft (Guia, ponto 3). Correr primeiro o pedido 6. Os campos do corpo podem ter de ser ajustados conforme o $metadata (pedido 3)."
+          },
+          "response": []
+        },
+        {
+          "name": "7d. Adicionar morada",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "sap-client",
+                "value": "{{sap_client}}"
+              },
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Country\": \"PT\",\n  \"CityName\": \"Guimarães\",\n  \"PostalCode\": \"4810-225\",\n  \"StreetName\": \"Largo do Toural\",\n  \"HouseNumber\": \"1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sap_url}}sap/opu/odata/sap/MD_BUSINESSPARTNER_SRV/C_BusinessPartner(BusinessPartner='',DraftUUID=guid'fa492a64-b120-1fd1-b8bd-a7a0f8cb6000',IsActiveEntity=false)/to_BusinessPartnerAddress",
+              "host": [
+                "{{sap_url}}sap"
+              ],
+              "path": [
+                "opu",
+                "odata",
+                "sap",
+                "MD_BUSINESSPARTNER_SRV",
+                "C_BusinessPartner(BusinessPartner='',DraftUUID=guid'fa492a64-b120-1fd1-b8bd-a7a0f8cb6000',IsActiveEntity=false)",
+                "to_BusinessPartnerAddress"
+              ]
+            },
+            "description": "Cria um Business Partner em modo draft (Guia, ponto 3). Correr primeiro o pedido 6. Os campos do corpo podem ter de ser ajustados conforme o $metadata (pedido 3)."
+          },
+          "response": []
+        },
+        {
+          "name": "7e. Ver papéis do BP",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "sap-client",
+                "value": "{{sap_client}}"
+              },
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{sap_url}}sap/opu/odata/sap/MD_BUSINESSPARTNER_SRV/C_BusinessPartner(BusinessPartner='',DraftUUID=guid'fa492a64-b120-1fd1-b8bd-a7a0f8cb6000',IsActiveEntity=false)/to_BusinessPartnerRole",
+              "host": [
+                "{{sap_url}}sap"
+              ],
+              "path": [
+                "opu",
+                "odata",
+                "sap",
+                "MD_BUSINESSPARTNER_SRV",
+                "C_BusinessPartner(BusinessPartner='',DraftUUID=guid'fa492a64-b120-1fd1-b8bd-a7a0f8cb6000',IsActiveEntity=false)",
+                "to_BusinessPartnerRole"
+              ]
+            },
+            "description": "Cria um Business Partner em modo draft (Guia, ponto 3). Correr primeiro o pedido 6. Os campos do corpo podem ter de ser ajustados conforme o $metadata (pedido 3)."
+          },
+          "response": []
+        },
+        {
+          "name": "8. Ativar Business Partner",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "sap-client",
+                "value": "{{sap_client}}"
+              },
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{sap_url}}sap/opu/odata/sap/MD_BUSINESSPARTNER_SRV/C_BusinessPartnerActivation?BusinessPartner=''&DraftUUID=guid'fa492a64-b120-1fd1-b8bd-a7a0f8cb6000'&IsActiveEntity=false",
+              "host": [
+                "{{sap_url}}sap"
+              ],
+              "path": [
+                "opu",
+                "odata",
+                "sap",
+                "MD_BUSINESSPARTNER_SRV",
+                "C_BusinessPartnerActivation"
+              ],
+              "query": [
+                {
+                  "key": "BusinessPartner",
+                  "value": "''"
+                },
+                {
+                  "key": "DraftUUID",
+                  "value": "guid'fa492a64-b120-1fd1-b8bd-a7a0f8cb6000'"
+                },
+                {
+                  "key": "IsActiveEntity",
+                  "value": "false"
+                }
+              ]
+            },
+            "description": "Cria um Business Partner em modo draft (Guia, ponto 3). Correr primeiro o pedido 6. Os campos do corpo podem ter de ser ajustados conforme o $metadata (pedido 3)."
+          },
+          "response": []
+        },
+        {
+          "name": "Teste 1: a API existe neste sistema?",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "sap-client",
+                "value": "{{sap_client}}"
+              },
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{sap_url}}sap/opu/odata/sap/API_BUSINESS_PARTNER/A_BusinessPartner?$top=1&$format=json",
+              "host": [
+                "{{sap_url}}sap"
+              ],
+              "path": [
+                "opu",
+                "odata",
+                "sap",
+                "API_BUSINESS_PARTNER",
+                "A_BusinessPartner"
+              ],
+              "query": [
+                {
+                  "key": "$top",
+                  "value": "1"
+                },
+                {
+                  "key": "$format",
+                  "value": "json"
+                }
+              ]
+            },
+            "description": "Cria um Business Partner em modo draft (Guia, ponto 3). Correr primeiro o pedido 6. Os campos do corpo podem ter de ser ajustados conforme o $metadata (pedido 3)."
+          },
+          "response": []
+        }
+      ],
+      "description": "Servidor SAP das aulas: https://s20.gb.ucc.cit.tum.de/, sap-client 305, utilizador LEARN-###.",
+      "auth": {
+        "type": "basic",
+        "basic": [
+          {
+            "key": "username",
+            "value": "{{sap_user}}",
+            "type": "string"
+          },
+          {
+            "key": "password",
+            "value": "{{sap_password}}",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Moloni",
+      "item": [
+        {
+          "name": "1. Login (obter access_token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.environment.set('moloni_token', j.access_token);",
+                  "pm.test('Token Moloni recebido', () => pm.expect(j.access_token).to.be.ok);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://api.moloni.pt/v1/grant/?grant_type=password&client_id={{moloni_client_id}}&client_secret={{moloni_client_secret}}&username={{moloni_username}}&password={{moloni_password}}",
+              "protocol": "https",
+              "host": [
+                "api",
+                "moloni",
+                "pt"
+              ],
+              "path": [
+                "v1",
+                "grant",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "grant_type",
+                  "value": "password"
+                },
+                {
+                  "key": "client_id",
+                  "value": "{{moloni_client_id}}"
+                },
+                {
+                  "key": "client_secret",
+                  "value": "{{moloni_client_secret}}"
+                },
+                {
+                  "key": "username",
+                  "value": "{{moloni_username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{moloni_password}}"
+                }
+              ]
+            },
+            "description": "Autenticação de Aplicações Nativas (Guia, ponto 5). Guarda o token na variável moloni_token (dura 1 hora)."
+          },
+          "response": []
+        },
+        {
+          "name": "2. Empresas da conta",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://api.moloni.pt/v1/companies/getAll/?access_token={{moloni_token}}&json=true&human_errors=true",
+              "protocol": "https",
+              "host": [
+                "api",
+                "moloni",
+                "pt"
+              ],
+              "path": [
+                "v1",
+                "companies",
+                "getAll",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "access_token",
+                  "value": "{{moloni_token}}"
+                },
+                {
+                  "key": "json",
+                  "value": "true"
+                },
+                {
+                  "key": "human_errors",
+                  "value": "true"
+                }
+              ]
+            },
+            "description": "Mostra o company_id de cada empresa (a tua e a Empresa Demonstração)."
+          },
+          "response": []
+        },
+        {
+          "name": "3. Séries de documentos",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"company_id\": {{moloni_company_id}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://api.moloni.pt/v1/documentSets/getAll/?access_token={{moloni_token}}&json=true&human_errors=true",
+              "protocol": "https",
+              "host": [
+                "api",
+                "moloni",
+                "pt"
+              ],
+              "path": [
+                "v1",
+                "documentSets",
+                "getAll",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "access_token",
+                  "value": "{{moloni_token}}"
+                },
+                {
+                  "key": "json",
+                  "value": "true"
+                },
+                {
+                  "key": "human_errors",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4. Clientes",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"company_id\": {{moloni_company_id}},\n  \"qty\": 10,\n  \"offset\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://api.moloni.pt/v1/customers/getAll/?access_token={{moloni_token}}&json=true&human_errors=true",
+              "protocol": "https",
+              "host": [
+                "api",
+                "moloni",
+                "pt"
+              ],
+              "path": [
+                "v1",
+                "customers",
+                "getAll",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "access_token",
+                  "value": "{{moloni_token}}"
+                },
+                {
+                  "key": "json",
+                  "value": "true"
+                },
+                {
+                  "key": "human_errors",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "5. Artigo DN-TAXA",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"company_id\": {{moloni_company_id}},\n  \"reference\": \"DN-TAXA\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://api.moloni.pt/v1/products/getByReference/?access_token={{moloni_token}}&json=true&human_errors=true",
+              "protocol": "https",
+              "host": [
+                "api",
+                "moloni",
+                "pt"
+              ],
+              "path": [
+                "v1",
+                "products",
+                "getByReference",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "access_token",
+                  "value": "{{moloni_token}}"
+                },
+                {
+                  "key": "json",
+                  "value": "true"
+                },
+                {
+                  "key": "human_errors",
+                  "value": "true"
+                }
+              ]
+            },
+            "description": "Confirma que o artigo da taxa de entrada existe e tem IVA."
+          },
+          "response": []
+        },
+        {
+          "name": "6. Faturas-recibo (rascunhos incluídos)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"company_id\": {{moloni_company_id}},\n  \"qty\": 10,\n  \"offset\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://api.moloni.pt/v1/invoiceReceipts/getAll/?access_token={{moloni_token}}&json=true&human_errors=true",
+              "protocol": "https",
+              "host": [
+                "api",
+                "moloni",
+                "pt"
+              ],
+              "path": [
+                "v1",
+                "invoiceReceipts",
+                "getAll",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "access_token",
+                  "value": "{{moloni_token}}"
+                },
+                {
+                  "key": "json",
+                  "value": "true"
+                },
+                {
+                  "key": "human_errors",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "auth": {
+        "type": "noauth"
+      }
+    }
+  ]
+}
