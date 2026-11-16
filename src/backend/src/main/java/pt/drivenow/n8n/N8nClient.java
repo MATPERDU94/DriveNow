@@ -3,10 +3,12 @@ package pt.drivenow.n8n;
 import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
@@ -21,6 +23,8 @@ import org.springframework.web.client.RestClientException;
 public class N8nClient {
 
     private static final Logger log = LoggerFactory.getLogger(N8nClient.class);
+    private static final ParameterizedTypeReference<Map<String, Object>> MAPA = new ParameterizedTypeReference<>() {
+    };
 
     private final RestClient http;
     private final boolean configurado;
@@ -42,8 +46,8 @@ public class N8nClient {
     }
 
     /**
-     * Envia o evento ao n8n. Devolve false se o n8n não estiver configurado (N8N_URL vazio)
-     * ou não responder; nesse caso quem chama decide o que fazer.
+     * Envia o evento ao n8n sem esperar dados de volta. Devolve false se o n8n não estiver
+     * configurado (N8N_URL vazio) ou não responder; nesse caso quem chama decide o que fazer.
      */
     public boolean enviar(String evento, Map<String, Object> dados) {
         if (!configurado) {
@@ -61,6 +65,30 @@ public class N8nClient {
         } catch (RestClientException e) {
             log.warn("Não foi possível enviar o evento '{}' ao n8n: {}", evento, e.getMessage());
             return false;
+        }
+    }
+
+    /**
+     * Envia o evento ao n8n e devolve a resposta do fluxo (JSON). Vazio se o n8n não estiver
+     * configurado, não responder ou responder sem JSON.
+     */
+    public Optional<Map<String, Object>> pedir(String evento, Map<String, Object> dados) {
+        if (!configurado) {
+            return Optional.empty();
+        }
+        try {
+            Map<String, Object> resposta = http.post()
+                    .uri("/webhook/{evento}", evento)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .accept(MediaType.APPLICATION_JSON)
+                    .body(dados)
+                    .retrieve()
+                    .body(MAPA);
+            log.info("Evento '{}' enviado ao n8n: {} -> resposta {}", evento, dados, resposta);
+            return Optional.ofNullable(resposta);
+        } catch (RestClientException e) {
+            log.warn("Não foi possível enviar o evento '{}' ao n8n: {}", evento, e.getMessage());
+            return Optional.empty();
         }
     }
 }

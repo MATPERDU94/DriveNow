@@ -13,8 +13,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import pt.drivenow.n8n.N8nClient;
 import pt.drivenow.odoo.OdooClient;
 
 /**
@@ -30,10 +33,14 @@ public class DanoService {
     private static final List<String> CAMPOS_TIPO = List.of(
             "name", "damage_severity", "damage_cost", "blocks_vehicle", "damage_description");
 
-    private final OdooClient odoo;
+    private static final Logger log = LoggerFactory.getLogger(DanoService.class);
 
-    public DanoService(OdooClient odoo) {
+    private final OdooClient odoo;
+    private final N8nClient n8n;
+
+    public DanoService(OdooClient odoo, N8nClient n8n) {
         this.odoo = odoo;
+        this.n8n = n8n;
     }
 
     public List<TipoDanoDto> listarTipos() {
@@ -55,6 +62,21 @@ public class DanoService {
      * @param custo valor a registar (0 quando o dano não é cobrado ao cliente)
      */
     public long registar(long viaturaId, long tipoDanoId, double custo, String descricao) {
+        // Diagrama 4: o evento "dano reportado" vai para o n8n, que regista o dano no Odoo e devolve o id.
+        // Se o n8n não estiver configurado ou não responder, o backend regista o dano diretamente.
+        Map<String, Object> evento = new HashMap<>();
+        evento.put("viaturaId", viaturaId);
+        evento.put("tipoDanoId", tipoDanoId);
+        evento.put("custo", custo);
+        evento.put("descricao", descricao);
+        Optional<Long> viaN8n = n8n.pedir("dano-reportado", evento)
+                .map(r -> r.get("odooId"))
+                .filter(Number.class::isInstance)
+                .map(id -> ((Number) id).longValue());
+        if (viaN8n.isPresent()) {
+            return viaN8n.get();
+        }
+        log.info("Dano registado diretamente no Odoo (sem n8n)");
         Map<String, Object> valores = new HashMap<>();
         valores.put("vehicle_id", viaturaId);
         valores.put("service_type_id", tipoDanoId);
