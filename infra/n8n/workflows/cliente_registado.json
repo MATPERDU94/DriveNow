@@ -1,0 +1,313 @@
+{
+  "name": "DriveNow - Cliente registado",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "cliente-registado",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "drivenow-cliente-registado"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://s20.gb.ucc.cit.tum.de/sap/opu/odata/sap/MD_BUSINESSPARTNER_SRV/",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "sap-client",
+              "value": "305"
+            },
+            {
+              "name": "X-CSRF-Token",
+              "value": "Fetch"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "name": "Obter token CSRF",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        0
+      ],
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "",
+          "name": "SAP s20"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://s20.gb.ucc.cit.tum.de/sap/opu/odata/sap/MD_BUSINESSPARTNER_SRV/C_BusinessPartner",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "sap-client",
+              "value": "305"
+            },
+            {
+              "name": "X-CSRF-Token",
+              "value": "={{ $('Obter token CSRF').item.json.headers['x-csrf-token'] }}"
+            },
+            {
+              "name": "Cookie",
+              "value": "={{ ($('Obter token CSRF').item.json.headers['set-cookie'] || []).map(c => c.split(';')[0]).join('; ') }}"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"BusinessPartnerCategory\": \"1\", \"FirstName\": {{ JSON.stringify($('Webhook').item.json.body.primeiroNome) }}, \"LastName\": {{ JSON.stringify($('Webhook').item.json.body.apelido) }}}"
+      },
+      "name": "Criar rascunho do cliente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        0
+      ],
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "",
+          "name": "SAP s20"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://s20.gb.ucc.cit.tum.de/sap/opu/odata/sap/MD_BUSINESSPARTNER_SRV/C_BusinessPartner(BusinessPartner='',DraftUUID=guid'{{ $('Criar rascunho do cliente').item.json.d.DraftUUID }}',IsActiveEntity=false)/to_BusinessPartnerRole",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "sap-client",
+              "value": "305"
+            },
+            {
+              "name": "X-CSRF-Token",
+              "value": "={{ $('Obter token CSRF').item.json.headers['x-csrf-token'] }}"
+            },
+            {
+              "name": "Cookie",
+              "value": "={{ ($('Obter token CSRF').item.json.headers['set-cookie'] || []).map(c => c.split(';')[0]).join('; ') }}"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"BusinessPartnerRole\": \"FLCU01\"}"
+      },
+      "name": "Adicionar papel de cliente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        0
+      ],
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "",
+          "name": "SAP s20"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://s20.gb.ucc.cit.tum.de/sap/opu/odata/sap/MD_BUSINESSPARTNER_SRV/C_BusinessPartnerRole(BusinessPartner='',BusinessPartnerRole='FLCU01',DraftUUID=guid'{{ $json.d.DraftUUID }}',IsActiveEntity=false)",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "sap-client",
+              "value": "305"
+            },
+            {
+              "name": "X-CSRF-Token",
+              "value": "={{ $('Obter token CSRF').item.json.headers['x-csrf-token'] }}"
+            },
+            {
+              "name": "Cookie",
+              "value": "={{ ($('Obter token CSRF').item.json.headers['set-cookie'] || []).map(c => c.split(';')[0]).join('; ') }}"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"BusinessPartnerRoleForEdit\": \"FLCU01\"}"
+      },
+      "name": "Preencher papel (ForEdit)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        960,
+        0
+      ],
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "",
+          "name": "SAP s20"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://s20.gb.ucc.cit.tum.de/sap/opu/odata/sap/MD_BUSINESSPARTNER_SRV/C_BusinessPartner(BusinessPartner='',DraftUUID=guid'{{ $('Criar rascunho do cliente').item.json.d.DraftUUID }}',IsActiveEntity=false)/to_BusinessPartnerAddress",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "sap-client",
+              "value": "305"
+            },
+            {
+              "name": "X-CSRF-Token",
+              "value": "={{ $('Obter token CSRF').item.json.headers['x-csrf-token'] }}"
+            },
+            {
+              "name": "Cookie",
+              "value": "={{ ($('Obter token CSRF').item.json.headers['set-cookie'] || []).map(c => c.split(';')[0]).join('; ') }}"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"Country\": \"PT\", \"CityName\": \"Guimarães\", \"PostalCode\": \"4810-225\", \"StreetName\": \"Largo do Toural\", \"HouseNumber\": \"1\"}"
+      },
+      "name": "Adicionar morada",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1200,
+        0
+      ],
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "",
+          "name": "SAP s20"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Obter token CSRF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obter token CSRF": {
+      "main": [
+        [
+          {
+            "node": "Criar rascunho do cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criar rascunho do cliente": {
+      "main": [
+        [
+          {
+            "node": "Adicionar papel de cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Adicionar papel de cliente": {
+      "main": [
+        [
+          {
+            "node": "Preencher papel (ForEdit)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preencher papel (ForEdit)": {
+      "main": [
+        [
+          {
+            "node": "Adicionar morada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
