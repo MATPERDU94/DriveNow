@@ -1,0 +1,120 @@
+{
+  "name": "DriveNow - Documentos dos carros",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "name": "Todos os dias às 8h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8069/json/2/fleet.vehicle.log.contract/search_read",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Odoo-Database",
+              "value": "drivenow"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"domain\": [[\"cost_subtype_id.name\", \"in\", [\"Seguro\", \"Inspeção periódica\", \"IUC\"]], [\"state\", \"!=\", \"closed\"], [\"expiration_date\", \"<=\", \"{{ $now.plus({days: 30}).toISODate() }}\"]], \"fields\": [\"vehicle_id\", \"cost_subtype_id\", \"expiration_date\"]}",
+        "options": {}
+      },
+      "name": "Documentos a caducar (30 dias)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        260,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8069/json/2/fleet.vehicle/message_post",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Odoo-Database",
+              "value": "drivenow"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"ids\": [{{ $json.vehicle_id[0] }}], \"body\": {{ JSON.stringify(($json.expiration_date < $today.toISODate() ? \"URGENTE: \" : \"Aviso: \") + $json.cost_subtype_id[1] + ($json.expiration_date < $today.toISODate() ? \" caducou em \" : \" caduca em \") + $json.expiration_date + \". \" + ($json.expiration_date < $today.toISODate() ? \"A viatura está bloqueada para novas reservas até o documento ser renovado.\" : \"Renovar antes dessa data, senão a viatura fica bloqueada.\")) }}, \"message_type\": \"comment\", \"subtype_xmlid\": \"mail.mt_note\"}",
+        "options": {}
+      },
+      "name": "Alertar o gestor no Odoo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        520,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "Header Auth account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Todos os dias às 8h": {
+      "main": [
+        [
+          {
+            "node": "Documentos a caducar (30 dias)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Documentos a caducar (30 dias)": {
+      "main": [
+        [
+          {
+            "node": "Alertar o gestor no Odoo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
