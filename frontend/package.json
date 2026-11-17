@@ -1,0 +1,34 @@
+{
+  "name": "drivenow-frontend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "DriveNow - app web do cliente (React + Vite), ligada ao backend Spring Boot",
+  "scripts": {
+    "dev": "vite",
+    "demo": "vite --mode demo",
+    "build": "tsc -b && vite build",
+    "build:demo": "tsc -b && vite build --mode demo --outDir dist-demo",
+    "preview": "vite preview",
+    "typecheck": "tsc -b",
+    "build:ficheiro": "tsc -b && vite build --mode ficheiro --outDir dist-ficheiro"
+  },
+  "dependencies": {
+    "@fontsource/plus-jakarta-sans": "^5.1.0",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^0.460.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-leaflet": "^4.2.1",
+    "react-router-dom": "^6.28.0"
+  },
+  "devDependencies": {
+    "@types/leaflet": "^1.9.14",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.20",
+    "vite-plugin-singlefile": "^2.0.3"
+  }
+}
