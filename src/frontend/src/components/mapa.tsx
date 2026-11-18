@@ -3,10 +3,10 @@ import L from 'leaflet';
 import { TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import type { Ponto } from '../lib/geo';
 
-// Mapa claro (CARTO Voyager, dados OpenStreetMap). Pode ser trocado com VITE_TILES_URL.
+// Mapa do OpenStreetMap. Pode ser trocado com VITE_TILES_URL.
 const TILES =
   (import.meta.env.VITE_TILES_URL as string | undefined) ||
-  'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+  'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 
 // Se o servidor de mapas não responder (sem internet, rede bloqueada), passa-se a um mapa ilustrativo
 let mosaicoFalhou = false;
@@ -18,8 +18,8 @@ export function Mosaico() {
     <TileLayer
       url={TILES}
       subdomains="abcd"
-      maxZoom={20}
-      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+      maxZoom={19}
+      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
       eventHandlers={{
         tileerror: () => {
           mosaicoFalhou = true;
