@@ -9,3 +9,9 @@ Professor, na integração com o SAP (s20) conseguimos ler os Business Partners 
 Para o projeto chega criarmos o cliente em rascunho, ou existe forma de o ativar neste sistema?
 
 
+Frontend: o React é aceite, ou os ecrãs têm de ser feitos no SAP Build Apps? A edição gratuita foi anunciada como descontinuada a 30/09/2026.
+
+
+SAP, cliente: chega o cliente em rascunho, ou há forma de o ativar? A ativação dá CHECK_TABLE_MISSING.
+
+SAP, vendas: que serviço usar para registar as vendas? Os de vendas dão 404.
