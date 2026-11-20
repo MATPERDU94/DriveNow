@@ -1,0 +1,72 @@
+@startuml 3 - Pagamento e Faturação
+title DriveNow - 3. Pagamento e faturação (v3)
+
+|Cliente|
+|App (React)|
+|Backend|
+|n8n|
+|SAP|
+|Moloni|
+
+|Backend|
+start
+:Receber fim da viagem (diagrama 2b)\nou cancelamento da reserva;
+:Calcular valor\n(taxa de entrada + minutos × preço/minuto\n+ km × preço/km + penalizações do relato de fim);
+
+repeat
+  |Backend|
+  :Cobrar meio de pagamento associado\n(pagamento simulado, cartões de teste);
+  if (Pagamento aprovado?) then (sim)
+  else (não)
+    :Registar dívida pendente\ne bloquear novas reservas;
+    |App (React)|
+    :Avisar o cliente da dívida;
+    |Cliente|
+    :Atualizar meio de pagamento\n(ecrã Perfil);
+    |Backend|
+    :Cobrar de novo a dívida\n(automaticamente);
+  endif
+repeat while (Pagamento em falta?) is (sim) not (não)
+
+fork
+  |App (React)|
+  :Mostrar resumo da viagem\n(trajeto no mapa, minutos, km,\ntaxa de entrada, valor do tempo, valor dos km,\npenalizações, valor sem IVA, IVA 23%, total\ne meio de pagamento);
+fork again
+  |Backend|
+  :Enviar evento "viagem paga"\n(webhook para o n8n);
+
+  |n8n|
+  :Receber dados da viagem e do cliente;
+
+  |SAP|
+  :Registar venda\n(serviço a confirmar com o docente);
+
+  repeat
+    |Moloni|
+    :Obter token e garantir o cliente;
+    :Emitir fatura-recibo\n(linhas: taxa de entrada, tempo, km\ne penalizações);
+    |n8n|
+    :Verificar resposta do Moloni;
+    backward:Ramo de erro: marcar "pendente de faturação"\ne tentar de novo mais tarde;
+  repeat while (Fatura emitida?) is (não) not (sim)
+
+  |n8n|
+  :Enviar ID e estado da fatura ao backend;
+  |Backend|
+  :Guardar fatura na reserva\n(ecrã "Viagens e faturas");
+
+  |n8n|
+  if (Fatura finalizada?) then (sim)
+    |Moloni|
+    :Disponibilizar PDF da fatura;
+    |n8n|
+    :Enviar fatura por email;
+    |Cliente|
+    :Receber fatura;
+  else (não, rascunho)
+  endif
+end fork
+
+stop
+
+@enduml

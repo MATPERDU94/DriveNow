@@ -1,0 +1,60 @@
+@startuml 5 - Documentação dos Carros
+title DriveNow - 5. Documentação dos carros (v3)
+
+|n8n|
+|Odoo|
+|Gestor de frota|
+|Backend|
+|App (React)|
+
+|n8n|
+start
+:Fluxo agendado (todos os dias)\nler a validade dos documentos;
+|Odoo|
+:Devolver os documentos de cada viatura\n(seguro, inspeção periódica, IUC);
+note right
+  Os documentos ficam no Odoo
+  como contratos da viatura
+  (tipo + data de validade).
+  As revisões por km estão
+  no diagrama 6.
+end note
+|n8n|
+if (Algum documento expira\nnos próximos 30 dias?) then (sim)
+  :Enviar alerta ao gestor de frota\n(email com a viatura e o documento);
+else (não)
+endif
+|n8n|
+if (Algum documento já expirou?) then (sim)
+  :Registar no log e alertar\no gestor de frota (urgente);
+else (não)
+endif
+|Gestor de frota|
+:Ver os documentos caducados ou a caducar\n(Frota → Contratos, filtrados por data);
+:Renovar o documento;
+|Odoo|
+:Atualizar a data de validade;
+stop
+
+|Backend|
+start
+:Antes de mostrar o mapa\ne antes de confirmar uma reserva;
+|Odoo|
+:Consultar os documentos da viatura;
+|Backend|
+if (Algum documento caducado?) then (sim)
+  :Viatura indisponível\n(as viagens em curso terminam normalmente;\nnovas reservas ficam bloqueadas);
+  |App (React)|
+  :Não mostrar o carro no mapa\n(ou mostrar o motivo ao reservar:\n"Documentos caducados");
+  note right
+    Quando o gestor renova o documento,
+    o carro volta ao mapa automaticamente,
+    sem outros passos.
+  end note
+else (não)
+  |App (React)|
+  :Mostrar o carro como disponível;
+endif
+stop
+
+@enduml

@@ -1,0 +1,48 @@
+@startuml 7 - Armazém e Compras
+title DriveNow - 7. Armazém e compras de peças (v3)
+
+|Gestor de frota e oficina|
+|Odoo|
+|n8n|
+|Fornecedor|
+
+|Odoo|
+start
+:**Parte 1 - Entradas (compras)**\nAgendador do Odoo (todos os dias)\nverifica o stock das peças;
+note right
+  Peças em stock (exemplos): pastilhas de travão,
+  filtros do habitáculo, pneus, escovas,
+  líquido de travões. Cada peça tem um stock
+  mínimo e um máximo (regra de reaprovisionamento).
+end note
+if (Alguma peça abaixo do stock mínimo?) then (sim)
+  :Criar pedido de cotação ao fornecedor\n(Compras: peça, quantidade até ao máximo);
+  |n8n|
+  :Avisar o gestor\n(email com as peças em falta);
+  |Gestor de frota e oficina|
+  :Rever e confirmar o pedido de compra;
+  |Fornecedor|
+  :Enviar as peças;
+  |Gestor de frota e oficina|
+  :Receber as peças no armazém\ne conferir as quantidades;
+  |Odoo|
+  :Validar a receção\n(ENTRADA no stock);
+  :Registar a fatura do fornecedor;
+else (não)
+endif
+stop
+
+|Gestor de frota e oficina|
+start
+:**Parte 2 - Saídas (consumos)**\nRevisão (diagrama 6) ou reparação\n(diagrama 4b) na oficina DriveNow;
+:Retirar as peças do armazém;
+|Odoo|
+:Registar a SAÍDA do stock\n(peça, quantidade e carro onde foi usada);
+:Atualizar as quantidades em stock;
+if (Peça abaixo do stock mínimo?) then (sim)
+  :Fica para o agendador da Parte 1\n(novo pedido de compra);
+else (não)
+endif
+stop
+
+@enduml

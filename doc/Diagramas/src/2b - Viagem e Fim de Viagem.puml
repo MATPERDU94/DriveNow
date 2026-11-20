@@ -1,0 +1,77 @@
+@startuml 2b - Viagem e Fim
+title DriveNow - 2b. Viagem e fim da viagem (v3)
+
+|Cliente|
+|App (React)|
+|Backend|
+|Odoo|
+|Serviço de rotas|
+|n8n|
+
+|Backend|
+start
+:Reserva ativa (diagrama 2a)\ncom o temporizador a contar;
+
+|Cliente|
+if (Cancelar reserva?) then (não)
+  :Indicar o estado do carro antes da viagem\n("sem danos" ou tipo de dano + descrição);
+  |Backend|
+  :Guardar relato de início\nassociado à viagem;
+  if (Dano reportado?) then (sim)
+    :Iniciar processo de danos (diagrama 4)\n(responsável: condutor anterior);
+  endif
+
+  |Cliente|
+  :Desbloquear carro e conduzir;
+  |App (React)|
+  :Mostrar tempo e valor até agora;
+  |Cliente|
+  :Terminar viagem na app;
+
+  repeat
+    |Cliente|
+    :Indicar o estado do carro no fim da viagem\n("sem danos" ou tipo de dano + descrição),\nos km do painel e onde deixou o carro;
+    |Backend|
+    :Validar os km\n(não podem ser inferiores aos km iniciais);
+  repeat while (Km válidos?) is (não) not (sim)
+
+  |Backend|
+  :Guardar relato de fim,\nlocalização final e km finais;
+  :Calcular km da viagem\n(km finais - km iniciais);
+  if (Dano reportado?) then (sim)
+    :Iniciar processo de danos (diagrama 4)\n(responsável: o próprio cliente);
+  endif
+
+  fork
+    |Backend|
+    :Pedir o trajeto\n(local de início → local de fim);
+    |Serviço de rotas|
+    :Devolver o percurso pelas ruas\n(trajeto simulado);
+    |Backend|
+    :Guardar o trajeto da viagem;
+  fork again
+    |Backend|
+    :Enviar evento "viagem terminada"\n(webhook para o n8n);
+    |n8n|
+    :Pedir atualização da quilometragem;
+    |Odoo|
+    :Atualizar quilometragem do carro;
+    |n8n|
+    if (Km do carro ≥ km da próxima revisão?) then (sim)
+      :Iniciar revisão por km (diagrama 6)\n(o carro fica bloqueado);
+    else (não)
+    endif
+  end fork
+else (sim)
+  |Backend|
+  :Km da viagem = 0\n(o carro não saiu do sítio);
+endif
+
+|Backend|
+:Parar temporizador;
+:Libertar carro\n(guardar localização final);
+:Calcular valor\n(taxa de entrada + minutos × preço/minuto\n+ km × preço/km + penalizações);
+:Iniciar processo de pagamento (diagrama 3);
+stop
+
+@enduml

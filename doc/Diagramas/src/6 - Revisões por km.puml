@@ -1,0 +1,50 @@
+@startuml
+title DriveNow - 6. Revisões por km na oficina (v3)
+
+|n8n|
+|Odoo|
+|Backend|
+|Gestor de frota e oficina|
+
+|n8n|
+start
+:Viagem terminada (diagrama 2b):\nkm do carro atualizados no Odoo;
+|Odoo|
+:Devolver os km atuais do carro\ne os km da próxima revisão;
+note right
+  Intervalo de revisão por modelo
+  guardado no Odoo
+  (ex.: a cada 15 000 km).
+end note
+|n8n|
+if (Km atuais ≥ km da próxima revisão?) then (não)
+  :Se faltarem menos de 1 000 km,\navisar a oficina (revisão para breve);
+  stop
+else (sim)
+endif
+|Odoo|
+:Criar serviço "Revisão" no carro\n(estado "A fazer");
+|n8n|
+:Alertar a oficina\n(email com o carro e os km);
+
+|Backend|
+:Carro bloqueado: deixa de aparecer no mapa\n(motivo "Revisão por fazer";\nas viagens em curso terminam normalmente);
+
+|Gestor de frota e oficina|
+:Levar o carro para a oficina DriveNow;
+:Fazer a revisão\n(pastilhas de travão, filtro do habitáculo,\npneus, escovas, líquido de travões,\nconforme o estado do carro);
+|Odoo|
+:Registar a saída das peças usadas\n(Inventário: saem do stock);
+if (Alguma peça ficou abaixo\ndo stock mínimo?) then (sim)
+  :Iniciar compra de peças (diagrama 7);
+else (não)
+endif
+
+|Gestor de frota e oficina|
+:Concluir o serviço "Revisão" no Odoo;
+|Odoo|
+:Definir os km da próxima revisão\n(km atuais + intervalo do modelo);
+|Backend|
+:Na consulta seguinte do mapa,\no carro volta a aparecer;
+stop
+@enduml

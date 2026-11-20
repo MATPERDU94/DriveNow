@@ -1,0 +1,37 @@
+@startuml 4b - Reparação
+title DriveNow - 4b. Danos: reparação do carro (v3)
+
+|Odoo|
+|Gestor de frota e oficina|
+|Backend|
+
+|Odoo|
+start
+:Dano registado (diagrama 4a)\n(estado "Novo"; se o dano imobiliza\no carro, este está "em reparação");
+
+|Gestor de frota e oficina|
+:Ver os danos por reparar no Odoo\n(Frota → Serviços);
+if (Reparação simples?\n(ex.: espelho, farol, pneu, limpeza)) then (sim)
+  :Reparar o carro na oficina DriveNow;
+  |Odoo|
+  :Registar a saída das peças usadas\n(Inventário: saem do stock);
+  if (Alguma peça ficou abaixo\ndo stock mínimo?) then (sim)
+    :Iniciar compra de peças (diagrama 7);
+  else (não)
+  endif
+else (não)
+  |Gestor de frota e oficina|
+  :Enviar o carro para uma oficina externa\n(ex.: chapa e pintura, acidente);
+  |Odoo|
+  :Registar o custo da reparação externa;
+endif
+
+|Gestor de frota e oficina|
+:Marcar o registo do dano como\n"Concluído" no Odoo;
+|Odoo|
+:Carro deixa de estar "em reparação";
+|Backend|
+:Na consulta seguinte do mapa,\no carro volta a aparecer;
+stop
+
+@enduml

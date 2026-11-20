@@ -1,0 +1,66 @@
+@startuml Arquitetura - DriveNow
+title DriveNow - Arquitetura e integrações (v3)
+
+skinparam componentStyle rectangle
+skinparam defaultFontName Arial
+skinparam shadowing false
+hide stereotype
+skinparam ArrowColor #444444
+skinparam rectangle {
+  BackgroundColor<<frontend>> #E3F2FD
+  BackgroundColor<<middleware>> #F1F8E9
+  BackgroundColor<<orquestracao>> #FFF3E0
+  BackgroundColor<<erp>> #F5F5F5
+  BackgroundColor<<externo>> #FCE4EC
+  BackgroundColor<<pausa>> #EEEEEE
+  FontColor<<pausa>> #757575
+}
+
+actor "Cliente" as cliente
+actor "Gestor de frota\n(e oficina DriveNow)" as gestor
+
+package "DriveNow" {
+  rectangle "**App DriveNow (React)**\n--\n• Criar conta e login\n• Mapa com carros disponíveis (GPS)\n• Confirmação da reserva\n  (taxa, preço/minuto e preço/km)\n• Reserva e viagem ativa (temporizador)\n• Estado do carro no início e no fim\n  (danos, km do painel e local)\n• Resumo com trajeto, km e valor\n• Viagens, faturas e perfil" <<frontend>> as app
+
+  rectangle "**Backend (Spring Boot) - middleware**\n--\n• API REST para a app (login com token)\n• Reservas e temporizador\n• Km da viagem (km final - km inicial)\n• Preço: taxa de entrada + minutos x preço/min\n  + km x preço/km + penalizações\n• Trajeto da viagem (serviço de rotas)\n• Regras dos danos (condutor anterior,\n  franquia, dano já registado)\n• Carros bloqueados: reservados, em reparação,\n  documentos caducados ou revisão por fazer\n• Pagamentos (simulados) e dívidas\n• Posição GPS das viaturas" <<middleware>> as backend
+
+  database "**Base de dados (PostgreSQL)**\n--\n• Utilizadores e meios de pagamento\n  (só os últimos 4 dígitos)\n• Reservas, viagens e cobranças\n• Km e trajeto de cada viagem\n• Relatos e danos\n• Posições das viaturas\n• IDs do SAP e do Moloni" as bd
+
+  rectangle "**n8n - orquestração**\n--\n• Cliente registado → SAP + Moloni\n• Viagem terminada → km no Odoo\n  e verificação da revisão\n• Dano → Odoo\n• Viagem paga → fatura no Moloni (em pausa)\n• Diário: documentos, revisões\n  e stock mínimo de peças\n• Ramos de erro e registos (logs)" <<orquestracao>> as n8n
+}
+
+package "ERP" {
+  rectangle "**SAP (s20, client 305)**\n--\n• Business Partner (cliente, em rascunho)\n• Consulta de produtos\n• Registo de vendas: a confirmar\n  com o docente" <<erp>> as sap
+
+  rectangle "**Moloni** (em pausa: aguarda o registo na AT)\n--\n• Clientes fiscais (nome, NIF)\n• Faturas-recibo\n  (viagens e penalizações)\n• PDF das faturas" <<pausa>> as moloni
+
+  rectangle "**Odoo Community (Docker)**\n--\n**Frota**\n• Registo mestre das viaturas\n• Tarifário (taxa + preço/min + preço/km)\n• Quilometragem e revisões por km\n• Danos e reparações\n• Documentação (seguro, inspeção, IUC)\n--\n**Inventário e Compras**\n• Armazém da oficina e stock de peças\n  (pastilhas de travão, filtros, pneus)\n• Entradas: compras a fornecedores\n• Saídas: peças gastas nas revisões\n  e reparações" <<erp>> as odoo
+}
+
+package "Serviços externos" {
+  rectangle "**Serviço de rotas (OSRM)**\n--\n• Percurso pelas ruas entre o início\n  e o fim da viagem (trajeto simulado)" <<externo>> as rotas
+}
+
+cliente --> app : usa a app
+app --> backend : pedidos REST (JSON)
+backend --> bd : lê e grava
+backend --> odoo : consulta frota, tarifário,\nkm e carros indisponíveis
+backend --> rotas : pede o trajeto\n(início → fim)
+backend --> n8n : eventos (webhooks)
+n8n --> backend : IDs e estado\ndas faturas
+n8n --> sap : criar Business Partner\n(OData + CSRF token)
+n8n ..> moloni : criar cliente,\nemitir faturas, obter PDF\n(em pausa)
+n8n --> odoo : regista km e danos;\nverifica revisões e stock
+gestor --> odoo : renova documentos, faz revisões\ne reparações, compra peças
+
+legend right
+  **Sistema de referência de cada dado**
+  Clientes (Business Partner): SAP
+  Faturas: Moloni (em pausa)
+  Viaturas, tarifário, km, danos, documentos,
+  revisões, peças e stock: Odoo
+  Reservas, viagens, km e trajetos,
+  pagamentos, GPS: Backend
+endlegend
+
+@enduml

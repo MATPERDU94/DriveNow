@@ -1,0 +1,62 @@
+@startuml
+title DriveNow - 2a. Procurar e reservar um carro (v3)
+
+|Cliente|
+|App (React)|
+|Backend|
+|Odoo|
+
+|Cliente|
+start
+:Fazer login na app;
+
+|App (React)|
+:Obter localização GPS do cliente;
+:Pedir carros próximos ao backend;
+
+repeat
+  |Backend|
+  fork
+    |Odoo|
+    :Devolver frota e tarifário\n(taxa de entrada + preço/minuto\n+ preço/km);
+  fork again
+    |Odoo|
+    :Devolver carros indisponíveis\n(em reparação, documentos caducados\nou revisão por fazer);
+  fork again
+    |Backend|
+    :Ler posições GPS\ne reservas ativas;
+  end fork
+  |Backend|
+  :Excluir carros indisponíveis\ne já reservados;
+  :Ordenar por distância ao cliente;
+  |App (React)|
+  :Mostrar carros no mapa;
+  backward:Aguardar e atualizar o mapa;
+repeat while (Há carro disponível?) is (não) not (sim)
+
+|Cliente|
+:Escolher carro;
+|App (React)|
+:Mostrar confirmação da reserva\n(taxa de entrada, preço/minuto, preço/km\ne aviso: o tempo começa a contar);
+|Cliente|
+if (Confirmar reserva?) then (não)
+  stop
+else (sim)
+endif
+
+|Backend|
+if (Pode reservar?\n(sem reserva ativa, com meio de pagamento,\nsem dívidas, carro disponível no Odoo)) then (não)
+  |App (React)|
+  :Mostrar o motivo\n(ex.: pagamento em dívida);
+  stop
+else (sim)
+endif
+
+|Backend|
+:Bloquear carro e guardar na reserva\nos preços e os km iniciais do carro;
+:Iniciar temporizador;
+|App (React)|
+:Mostrar a reserva ativa\n(tempo e valor até agora,\nonde está o carro);
+:Continua no diagrama 2b\n(viagem e fim);
+stop
+@enduml

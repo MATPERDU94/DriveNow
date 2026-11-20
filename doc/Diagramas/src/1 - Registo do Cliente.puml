@@ -1,0 +1,73 @@
+@startuml 1 - Registo do Cliente
+title DriveNow - 1. Registo do cliente (v3)
+
+|Cliente|
+|App (React)|
+|Backend|
+|n8n|
+|SAP|
+|Moloni|
+
+|Cliente|
+start
+:Abrir a app e escolher "Criar conta";
+
+repeat
+  |Cliente|
+  :Preencher dados (nome, email, NIF,\ntelemóvel, password), associar cartão\nou conta bancária e aceitar os termos;
+  |App (React)|
+  :Enviar pedido de registo;
+  |Backend|
+  :Validar dados, NIF\ne meio de pagamento;
+repeat while (Dados válidos?) is (não) not (sim)
+
+|Backend|
+:Guardar utilizador\n(password encriptada) e meio de pagamento\n(só os últimos 4 dígitos);
+:Ativar conta e devolver token de sessão;
+
+fork
+  |App (React)|
+  :Guardar token e abrir o mapa;
+  |Cliente|
+  :Conta criada, pode reservar;
+fork again
+  |Backend|
+  :Enviar evento "cliente registado"\n(webhook para o n8n);
+  |n8n|
+  fork
+    |SAP|
+    :Obter CSRF token;
+    :Criar Business Partner em rascunho\n(MD_BUSINESSPARTNER_SRV);
+    :Adicionar papel de cliente (FLCU01)\ne morada;
+    note right
+      A ativação do cliente está bloqueada
+      pela configuração do s20
+      (CHECK_TABLE_MISSING): fica em rascunho.
+    end note
+  fork again
+    |Moloni|
+    :Procurar cliente pelo NIF;
+    note right
+      **Em pausa:** o Moloni aguarda o registo
+      da série na AT (a tratar pelo regente).
+      Por agora, o fluxo cria só o cliente no SAP.
+    end note
+    if (Já existe?) then (não)
+      :Criar cliente\n(nome, NIF, email);
+    else (sim)
+    endif
+  end fork
+  |n8n|
+  if (Ambos criados?) then (sim)
+    :Enviar IDs do SAP e do Moloni\nao backend;
+    |Backend|
+    :Guardar IDs do SAP e do Moloni;
+  else (não)
+    |n8n|
+    :Registar erro e tentar de novo\nmais tarde (ramo de erro);
+  endif
+end fork
+
+stop
+
+@enduml
