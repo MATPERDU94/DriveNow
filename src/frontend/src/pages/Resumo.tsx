@@ -6,6 +6,7 @@ import type { Relato, Reserva, Viatura } from '../api/types';
 import { useSessao } from '../state/sessao';
 import { useToast } from '../state/toast';
 import { Botao, Carregar, Spinner } from '../components/ui';
+import { TrajetoViagem } from '../components/TrajetoViagem';
 import { data, duracao, euro, hora, km, kmViagem, nomeModelo, porKm, porMinuto, semIva, totalDe } from '../lib/format';
 import { useIntervalo, useTitulo } from '../lib/hooks';
 
@@ -180,6 +181,8 @@ export default function Resumo() {
           </span>
         </div>
       ) : null}
+
+      {r.estado === 'CONCLUIDA' ? <TrajetoViagem reservaId={r.id} kmPainel={r.kmViagem} /> : null}
 
       {danos.length > 0 ? (
         <section className="cartao cartao--pad resumo__bloco">

@@ -134,7 +134,7 @@ public class RelatoService {
                 responsavel.adicionarPenalizacao(cobrado);
             }
         } else {
-            reserva.terminarViagem(cobrado, quilometragem);
+            reserva.terminarViagem(cobrado, quilometragem, latitude, longitude);
             localizacao.atualizar(reserva.getViaturaOdooId(), latitude, longitude);
             // Diagrama 2b: o evento "viagem terminada" vai para o n8n, que atualiza a quilometragem no Odoo.
             // Se o n8n não estiver configurado ou não responder, o backend regista-a diretamente.

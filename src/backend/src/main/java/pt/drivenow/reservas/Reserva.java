@@ -78,6 +78,14 @@ public class Reserva {
     @Column(precision = 10, scale = 2)
     private BigDecimal valorKm;
 
+    /** Onde estava o carro no momento da reserva (início do trajeto). */
+    private Double latInicial;
+    private Double lngInicial;
+
+    /** Onde o cliente deixou o carro (relato de FIM; fim do trajeto). */
+    private Double latFinal;
+    private Double lngFinal;
+
     /** Minutos desde a reserva até ao fim ou cancelamento (cada minuto começado conta). */
     private Long minutos;
 
@@ -125,15 +133,23 @@ public class Reserva {
         this.total = this.taxaEntrada;
     }
 
+    /** Guarda onde estava o carro no momento da reserva (para o trajeto da viagem). */
+    public void guardarLocalInicial(Double latitude, Double longitude) {
+        this.latInicial = latitude;
+        this.lngInicial = longitude;
+    }
+
     public void iniciarViagem() {
         this.estado = EstadoReserva.EM_CURSO;
         this.inicioViagem = Instant.now();
     }
 
-    /** Fim da viagem: para o temporizador, calcula os km da viagem e o total. */
-    public void terminarViagem(BigDecimal penalizacoes, double kmFinal) {
+    /** Fim da viagem: para o temporizador, guarda onde ficou o carro e calcula os km da viagem e o total. */
+    public void terminarViagem(BigDecimal penalizacoes, double kmFinal, double latFinal, double lngFinal) {
         this.estado = EstadoReserva.CONCLUIDA;
         pararTemporizador();
+        this.latFinal = latFinal;
+        this.lngFinal = lngFinal;
         this.kmFinal = kmFinal;
         // Reservas feitas antes de existirem km iniciais ficam com 0 km.
         this.kmViagem = kmInicial == null ? 0.0 : Math.round(Math.max(0, kmFinal - kmInicial) * 10) / 10.0;
@@ -223,6 +239,10 @@ public class Reserva {
     public Double getKmFinal() { return kmFinal; }
     public Double getKmViagem() { return kmViagem; }
     public BigDecimal getValorKm() { return valorKm; }
+    public Double getLatInicial() { return latInicial; }
+    public Double getLngInicial() { return lngInicial; }
+    public Double getLatFinal() { return latFinal; }
+    public Double getLngFinal() { return lngFinal; }
     public BigDecimal getTotalPenalizacoes() { return totalPenalizacoes; }
     public BigDecimal getTotal() { return total; }
     public EstadoPagamento getEstadoPagamento() { return estadoPagamento != null ? estadoPagamento : EstadoPagamento.PENDENTE; }

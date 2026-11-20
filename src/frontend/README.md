@@ -69,7 +69,7 @@ resto funciona igual.
 | Criar conta (dados + cartão ou IBAN) | `/criar-conta` | `POST /api/auth/registar` |
 | Mapa com os carros livres | `/mapa` | `GET /api/viaturas?lat&lng&disponiveis=true`, `POST /api/reservas` |
 | Reserva ativa / em viagem | `/viagem` | `GET /api/reservas/ativa`, `GET /api/viaturas/{id}`, `GET /api/danos/tipos`, `POST /api/reservas/{id}/relatos` (INICIO e FIM), `POST /api/reservas/{id}/cancelar` |
-| Viagem terminada | `/viagens/{id}` | `GET /api/reservas/{id}`, `GET /api/reservas/{id}/relatos`, `POST /api/reservas/{id}/faturar` |
+| Viagem terminada | `/viagens/{id}` | `GET /api/reservas/{id}`, `GET /api/reservas/{id}/relatos`, `GET /api/reservas/{id}/trajeto`, `POST /api/reservas/{id}/faturar` |
 | Viagens e faturas | `/viagens` | `GET /api/reservas`, `GET /api/viaturas` |
 | Perfil | `/perfil` | `GET/PUT /api/me`, `PUT /api/me/pagamento`, `POST /api/me/cobrancas/pagar` |
 
@@ -87,6 +87,9 @@ Os erros do backend (ProblemDetail) aparecem tal como vêm, por exemplo "Já tem
   1000 km) e onde deixou o carro (GPS ou toque no mapa). Ao escrever os km, a app mostra os km da viagem e quanto custam.
 - O resumo da viagem mostra a distância (km do painel no início e no fim), o tempo, os km e o total; a lista de viagens mostra os km.
 - Cancelar a reserva não conta km (o carro não saiu do sítio).
+- O resumo de uma viagem concluída mostra o **trajeto**: o percurso pelas ruas entre onde o carro estava na reserva e onde o
+  cliente o deixou, calculado pelo backend com o serviço de rotas OSRM. É simulado (o carro não é seguido por GPS); se o serviço
+  não responder, aparece a linha reta a tracejado. No modo demonstração o percurso é desenhado "em escada" entre os dois pontos.
 - Pagamento recusado → dívida: não pode reservar até mudar o meio de pagamento no perfil (a dívida é cobrada logo a seguir).
 - A fatura aparece como "Pendente" até o sistema de faturação responder; o ecrã vai-se atualizando sozinho.
 

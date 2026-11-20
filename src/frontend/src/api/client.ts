@@ -7,6 +7,7 @@ import type {
   Reserva,
   Sessao,
   TipoDano,
+  Trajeto,
   Utilizador,
   Viatura,
 } from './types';
@@ -157,6 +158,8 @@ export const api = {
   faturar: (id: number) => pedido<Reserva>('POST', `/reservas/${id}/faturar`),
   relatar: (reservaId: number, r: PedidoRelato) => pedido<Relato>('POST', `/reservas/${reservaId}/relatos`, r),
   relatos: (reservaId: number) => pedido<Relato[]>('GET', `/reservas/${reservaId}/relatos`),
+  /** null se a reserva não tiver trajeto (cancelada) */
+  trajeto: (reservaId: number) => pedido<Trajeto | null>('GET', `/reservas/${reservaId}/trajeto`),
 };
 
 /** Abre a fatura (PDF do Moloni). No modo demonstração gera um recibo de exemplo. */

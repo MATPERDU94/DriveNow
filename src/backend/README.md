@@ -20,6 +20,7 @@ src/main/java/pt/drivenow/
 ├── pagamentos/    meio de pagamento e cobranças (simuladas)
 ├── reservas/      reservas e estado da viagem
 ├── relatos/       relatos de início/fim + atribuição de danos e penalizações
+├── trajetos/      trajeto de cada viagem (serviço de rotas OSRM)
 └── common/        erros da API
 ```
 
@@ -42,6 +43,9 @@ Preenche:
 
 - `ODOO_DB`: o nome da base de dados do Odoo (vê-o em http://localhost:8069/web/database/manager)
 - `ODOO_API_KEY`: a chave do passo 1
+
+Opcional: `ROTAS_URL`, o serviço de rotas usado no trajeto das viagens (por omissão `https://router.project-osrm.org`;
+vazio = não pede rotas e a app mostra a linha reta).
 
 O `.env` não vai para o Git.
 
@@ -117,6 +121,7 @@ curl -s localhost:8080/api/me -H "Authorization: Bearer $TOKEN" | python3 -m jso
 | POST | `/api/reservas/{id}/faturar` | Emitir (ou repetir) a fatura-recibo no Moloni |
 | POST | `/api/reservas/{id}/relatos` | Relato `{tipo: INICIO/FIM, observacoes, danos: [{tipoDanoId, descricao}], latitude, longitude, quilometragem}` (coordenadas e quilometragem obrigatórias no FIM) |
 | GET | `/api/reservas/{id}/relatos` | Relatos da reserva |
+| GET | `/api/reservas/{id}/trajeto` | Trajeto da viagem: percurso pelas ruas entre o início e o fim (204 se a reserva foi cancelada) |
 
 ## Preço da viagem
 
@@ -135,6 +140,21 @@ total = taxa de entrada + minutos × preço por minuto + km × preço por km + p
 - Os preços são copiados para a reserva no momento em que é criada: se o tarifário mudar a meio da viagem, o cliente paga o preço que viu.
 - O `valorAteAgora` (ecrã "Em viagem") ainda não inclui os km: só se sabem no fim.
 - Não é possível reservar uma viatura sem preço por minuto definido no Odoo.
+
+## Trajeto da viagem (diagrama 2b)
+
+A DriveNow não segue o carro por GPS durante a viagem, por isso o trajeto é **simulado**: é o percurso de carro pelas ruas
+entre o sítio onde o carro estava quando foi reservado e o sítio onde o cliente o deixou.
+
+- Ao reservar, a reserva guarda a posição do carro (`latInicial`, `lngInicial`); no relato de FIM guarda onde ficou (`latFinal`, `lngFinal`).
+- Depois do pagamento, o backend pede o percurso ao **serviço de rotas OSRM**
+  (`GET {ROTAS_URL}/route/v1/driving/{lng1},{lat1};{lng2},{lat2}?overview=full&geometries=geojson`) e guarda-o na tabela `trajeto`
+  (pontos, distância pelas ruas e tempo estimado).
+- O servidor público do OSRM não garante disponibilidade: se não responder (até 3 s para ligar e 6 s para responder), a viagem
+  termina na mesma. Quando a app pedir o trajeto, o backend tenta outra vez; se continuar sem resposta, devolve a **linha reta**
+  (`tipo: LINHA_RETA`).
+- Os km cobrados são sempre os do painel; a distância do trajeto serve só para mostrar o percurso (o cliente pode ter dado voltas).
+- Reservas canceladas não têm trajeto (o carro não saiu do sítio).
 
 ## Faturação (Moloni)
 

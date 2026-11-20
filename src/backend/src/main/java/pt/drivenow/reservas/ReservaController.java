@@ -21,6 +21,8 @@ import pt.drivenow.auth.Autenticacao;
 import pt.drivenow.faturacao.FaturacaoService;
 import pt.drivenow.pagamentos.PagamentoService;
 import pt.drivenow.pagamentos.PosPagamento;
+import pt.drivenow.trajetos.TrajetoDto;
+import pt.drivenow.trajetos.TrajetoService;
 
 /** Reservas do utilizador autenticado (o utilizador vem do token). */
 @RestController
@@ -34,13 +36,15 @@ public class ReservaController {
     private final FaturacaoService faturacao;
     private final PagamentoService pagamentos;
     private final PosPagamento posPagamento;
+    private final TrajetoService trajetos;
 
     public ReservaController(ReservaService reservas, FaturacaoService faturacao, PagamentoService pagamentos,
-            PosPagamento posPagamento) {
+            PosPagamento posPagamento, TrajetoService trajetos) {
         this.reservas = reservas;
         this.faturacao = faturacao;
         this.pagamentos = pagamentos;
         this.posPagamento = posPagamento;
+        this.trajetos = trajetos;
     }
 
     /** POST /api/reservas {"viaturaId": 35}: reservar; o temporizador começa já. */
@@ -66,6 +70,16 @@ public class ReservaController {
     @GetMapping("/{id}")
     public ReservaDto obter(@AuthenticationPrincipal Jwt jwt, @PathVariable long id) {
         return reservas.obterDoUtilizador(id, Autenticacao.utilizadorId(jwt));
+    }
+
+    /**
+     * Trajeto da viagem (ecrã "Viagem terminada"): percurso pelas ruas entre o local de início e o de fim.
+     * 204 se não houver (reserva cancelada ou ainda a decorrer).
+     */
+    @GetMapping("/{id}/trajeto")
+    public ResponseEntity<TrajetoDto> trajeto(@AuthenticationPrincipal Jwt jwt, @PathVariable long id) {
+        reservas.verificarDono(id, Autenticacao.utilizadorId(jwt));
+        return trajetos.obter(id).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
     }
 
     /** Emite (ou volta a tentar emitir) a fatura-recibo no Moloni de uma viagem concluída. */

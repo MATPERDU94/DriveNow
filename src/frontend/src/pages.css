@@ -1179,6 +1179,114 @@
 .resumo__bloco {
   margin-top: 22px;
 }
+
+/* Trajeto da viagem (ecrã "Viagem terminada") */
+.trajeto__cab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.trajeto__titulo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 0;
+}
+.trajeto__titulo svg {
+  color: var(--link);
+}
+.mini-mapa--trajeto {
+  height: 300px;
+}
+.trajeto__contorno {
+  stroke: #ffffff;
+  stroke-width: 9px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+.trajeto__linha {
+  stroke: var(--link);
+  stroke-width: 5px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+.trajeto__linha--reta {
+  stroke: var(--muted-2);
+  stroke-dasharray: 2 10;
+}
+.inicio-pin {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  border: 5px solid var(--navy);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+.trajeto__pontos {
+  list-style: none;
+  margin: 18px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.trajeto__pontos li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+.trajeto__pontos small {
+  display: block;
+  color: var(--muted);
+  font-size: 13.5px;
+}
+.trajeto__pontos b {
+  display: block;
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+.trajeto__marca {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin-top: 4px;
+  border-radius: 50%;
+  background: #fff;
+  border: 4px solid var(--navy);
+}
+.trajeto__marca--fim {
+  background: var(--sky);
+  border-color: var(--navy);
+}
+.trajeto__nota {
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+.trajeto__fonte {
+  margin-top: 6px;
+  color: var(--muted-2);
+  font-size: 12.5px;
+}
+@media (max-width: 560px) {
+  .mini-mapa--trajeto {
+    height: 230px;
+  }
+  .trajeto__pontos {
+    grid-template-columns: 1fr;
+  }
+}
 .lista-danos {
   list-style: none;
   margin: 0;

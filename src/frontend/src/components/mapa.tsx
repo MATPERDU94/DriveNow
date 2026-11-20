@@ -126,6 +126,9 @@ export function iconePonto() {
 
 export const iconeEu = L.divIcon({ className: 'marcador-preco', html: '<div class="eu-pin"></div>', iconSize: [0, 0] });
 
+/** Início do trajeto: onde estava o carro quando foi reservado. */
+export const iconeInicio = L.divIcon({ className: 'marcador-preco', html: '<div class="inicio-pin"></div>', iconSize: [0, 0] });
+
 export function iconeCarro(claro = false) {
   return L.divIcon({
     className: 'marcador-preco',
@@ -145,6 +148,18 @@ export function Centrar({ centro, zoom }: { centro: Ponto; zoom?: number }) {
     }
     map.flyTo([centro.lat, centro.lng], zoom ?? Math.max(map.getZoom(), 15), { duration: 0.6 });
   }, [centro, zoom, map]);
+  return null;
+}
+
+/** Enquadra o mapa para mostrar todos os pontos (ex.: o trajeto de uma viagem). */
+export function Enquadrar({ pontos }: { pontos: [number, number][] }) {
+  const map = useMap();
+  const chave = pontos.map((p) => p.join(',')).join(';');
+  useEffect(() => {
+    if (pontos.length === 0) return;
+    if (pontos.length === 1) map.setView(pontos[0], 16);
+    else map.fitBounds(L.latLngBounds(pontos), { padding: [34, 34], maxZoom: 17 });
+  }, [map, chave]); // eslint-disable-line react-hooks/exhaustive-deps
   return null;
 }
 

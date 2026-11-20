@@ -37,6 +37,8 @@ n8n:
 drivenow:
   # Limite das penalizações por viagem (€)
   franquia: ${DRIVENOW_FRANQUIA:1000}
+  # Serviço de rotas (OSRM) para o trajeto de cada viagem. Vazio = sem pedidos (a app mostra a linha reta)
+  rotas-url: ${ROTAS_URL:https://router.project-osrm.org}
   # Segredo para assinar os tokens de login (mínimo 32 caracteres; mudar em produção)
   jwt-secret: ${JWT_SECRET:drivenow-segredo-de-desenvolvimento-mudar-em-producao}
   # Validade do token de login (horas)

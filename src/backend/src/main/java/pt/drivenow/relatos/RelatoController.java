@@ -20,6 +20,7 @@ import pt.drivenow.auth.Autenticacao;
 import pt.drivenow.pagamentos.PagamentoService;
 import pt.drivenow.pagamentos.PosPagamento;
 import pt.drivenow.reservas.ReservaService;
+import pt.drivenow.trajetos.TrajetoService;
 
 @RestController
 @RequestMapping("/api/reservas/{reservaId}/relatos")
@@ -46,13 +47,15 @@ public class RelatoController {
     private final ReservaService reservas;
     private final PagamentoService pagamentos;
     private final PosPagamento posPagamento;
+    private final TrajetoService trajetos;
 
     public RelatoController(RelatoService relatos, ReservaService reservas, PagamentoService pagamentos,
-            PosPagamento posPagamento) {
+            PosPagamento posPagamento, TrajetoService trajetos) {
         this.relatos = relatos;
         this.reservas = reservas;
         this.pagamentos = pagamentos;
         this.posPagamento = posPagamento;
+        this.trajetos = trajetos;
     }
 
     /**
@@ -69,6 +72,8 @@ public class RelatoController {
         if (pedido.tipo() == TipoRelato.FIM) {
             // Primeiro o pagamento; a fatura só é emitida (em segundo plano) se o pagamento for aprovado.
             posPagamento.depoisDe(pagamentos.cobrarViagem(reservaId));
+            // Diagrama 2b: pedir o trajeto (início → fim) ao serviço de rotas e guardá-lo. Nunca falha.
+            trajetos.calcular(reservaId);
         } else {
             // Danos reportados no início e cobrados ao condutor anterior: cobrança e fatura à parte.
             posPagamento.depoisDe(pagamentos.cobrarPenalizacoes(relato.id()));

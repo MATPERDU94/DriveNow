@@ -106,6 +106,19 @@ export interface Reserva {
   faturaErro: string | null;
 }
 
+/** Trajeto da viagem: percurso pelas ruas entre o local de início e o de fim (simulado). */
+export interface Trajeto {
+  /** RUAS = percurso do serviço de rotas; LINHA_RETA = o serviço não respondeu */
+  tipo: 'RUAS' | 'LINHA_RETA';
+  origem: { lat: number; lng: number };
+  destino: { lat: number; lng: number };
+  /** [latitude, longitude] */
+  pontos: [number, number][];
+  distanciaKm: number | null;
+  duracaoMin: number | null;
+  fonte: string | null;
+}
+
 export interface TipoDano {
   id: number;
   nome: string;

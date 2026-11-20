@@ -14,6 +14,7 @@ import type {
   Relato,
   Reserva,
   TipoDano,
+  Trajeto,
   Utilizador,
   Viatura,
 } from '../api/types';
@@ -126,6 +127,11 @@ interface ReservaInterna {
   precoKm: number;
   kmInicial: number;
   kmFinal: number | null;
+  /** onde estava o carro na reserva e onde ficou no fim (trajeto) */
+  latInicial: number | null;
+  lngInicial: number | null;
+  latFinal: number | null;
+  lngFinal: number | null;
   totalPenalizacoes: number;
   estadoPagamento: Reserva['estadoPagamento'];
   pagamentoDescricao: string | null;
@@ -134,7 +140,7 @@ interface ReservaInterna {
   moloniDocumentoId: number | null;
 }
 interface Estado {
-  versao: 2;
+  versao: 3;
   seq: { u: number; r: number; rel: number; c: number; fatura: number };
   utilizadores: UtilizadorInterno[];
   viaturas: ViaturaInterna[];
@@ -214,6 +220,8 @@ function semente(): Estado {
     // Cerca de 0,4 km por minuto em cidade; o carro já andou mais desde essa viagem.
     const kmFeitos = Math.round(min * 0.4 * 10) / 10;
     const kmFinal = v.km - 40 * (i + 1);
+    const de = LOCAIS[(vid * 3 + i) % LOCAIS.length];
+    const para = LOCAIS[(vid * 3 + i + 4) % LOCAIS.length];
     reservas.push({
       id,
       utilizadorId: 1,
@@ -228,6 +236,10 @@ function semente(): Estado {
       precoKm: v.precoKm,
       kmInicial: kmFinal - kmFeitos,
       kmFinal,
+      latInicial: de.lat,
+      lngInicial: de.lng,
+      latFinal: para.lat,
+      lngFinal: para.lng,
       totalPenalizacoes: 0,
       estadoPagamento: 'PAGO',
       pagamentoDescricao: 'Visa •••• 4242',
@@ -250,7 +262,7 @@ function semente(): Estado {
   });
 
   return {
-    versao: 2,
+    versao: 3,
     seq: { u: 2, r: reservas.length + 1, rel: 1, c: cobrancas.length + 1, fatura: 129 },
     utilizadores: [ana],
     viaturas,
@@ -268,7 +280,7 @@ function carregar(): Estado {
     const raw = localStorage.getItem(CHAVE);
     if (raw) {
       const e = JSON.parse(raw) as Estado;
-      if (e.versao === 2) estado = e;
+      if (e.versao === 3) estado = e;
     }
   } catch {
     /* sem storage: começa do zero */
@@ -404,6 +416,33 @@ function reservaDto(r: ReservaInterna): Reserva {
     moloniDocumentoId: r.moloniDocumentoId,
     faturaPdfUrl: r.estadoFatura === 'EMITIDA' ? `demo:fatura/${r.id}` : null,
     faturaErro: null,
+  };
+}
+
+/**
+ * No modo demonstração não há serviço de rotas: simula-se um percurso "em escada" (troços norte-sul e
+ * este-oeste, como ruas num quarteirão) entre o início e o fim.
+ */
+function trajetoSimulado(a: { lat: number; lng: number }, b: { lat: number; lng: number }): Trajeto {
+  const passos = 3;
+  const pontos: [number, number][] = [[a.lat, a.lng]];
+  for (let i = 1; i <= passos; i++) {
+    const lat = a.lat + ((b.lat - a.lat) * i) / passos;
+    const lng = a.lng + ((b.lng - a.lng) * i) / passos;
+    pontos.push([lat, pontos[pontos.length - 1][1]], [lat, lng]);
+  }
+  const unicos = pontos.filter((p, i) => i === 0 || p[0] !== pontos[i - 1][0] || p[1] !== pontos[i - 1][1]);
+  let km = 0;
+  for (let i = 1; i < unicos.length; i++)
+    km += distanciaKm({ lat: unicos[i - 1][0], lng: unicos[i - 1][1] }, { lat: unicos[i][0], lng: unicos[i][1] });
+  return {
+    tipo: 'RUAS',
+    origem: a,
+    destino: b,
+    pontos: unicos,
+    distanciaKm: Math.round(km * 100) / 100,
+    duracaoMin: Math.round((km / 25) * 60 * 10) / 10,
+    fonte: 'percurso simulado (modo demonstração)',
   };
 }
 
@@ -648,6 +687,10 @@ function rotear(metodo: string, caminhoCompleto: string, corpo: unknown, token: 
       precoKm: v.precoKm,
       kmInicial: v.km,
       kmFinal: null,
+      latInicial: v.lat,
+      lngInicial: v.lng,
+      latFinal: null,
+      lngFinal: null,
       totalPenalizacoes: 0,
       estadoPagamento: null,
       pagamentoDescricao: null,
@@ -666,7 +709,7 @@ function rotear(metodo: string, caminhoCompleto: string, corpo: unknown, token: 
     return r ? { status: 200, corpo: reservaDto(r) } : { status: 204 };
   }
 
-  mm = m(/^\/reservas\/(\d+)(?:\/(cancelar|faturar|relatos))?$/);
+  mm = m(/^\/reservas\/(\d+)(?:\/(cancelar|faturar|relatos|trajeto))?$/);
   if (mm) {
     const r = minhas().find((x) => x.id === Number(mm![1]));
     if (!r) throw naoEncontrado(`Reserva ${mm[1]} não existe`);
@@ -693,6 +736,12 @@ function rotear(metodo: string, caminhoCompleto: string, corpo: unknown, token: 
         gravar();
       }
       return { status: 200, corpo: reservaDto(r) };
+    }
+
+    if (acao === 'trajeto' && metodo === 'GET') {
+      if (r.estado !== 'CONCLUIDA' || r.latInicial == null || r.lngInicial == null || r.latFinal == null || r.lngFinal == null)
+        return { status: 204 };
+      return { status: 200, corpo: trajetoSimulado({ lat: r.latInicial, lng: r.lngInicial }, { lat: r.latFinal, lng: r.lngFinal }) };
     }
 
     if (acao === 'relatos' && metodo === 'GET')
@@ -784,6 +833,8 @@ function rotear(metodo: string, caminhoCompleto: string, corpo: unknown, token: 
         v.lat = p.latitude!;
         v.lng = p.longitude!;
         r.kmFinal = p.quilometragem!;
+        r.latFinal = p.latitude!;
+        r.lngFinal = p.longitude!;
         v.km = Math.round(p.quilometragem!);
         cobrar(r, reservaDto(r).total ?? 0);
       }

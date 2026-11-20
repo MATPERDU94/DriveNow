@@ -64,8 +64,10 @@ public class ReservaService {
         BigDecimal porKm = BigDecimal.valueOf(viatura.precoKm() != null ? viatura.precoKm() : 0);
         // Diagrama 2a: guardar na reserva os preços e os km iniciais do carro.
         Double kmInicial = kmAtuais(viaturaId, viatura.quilometragem());
-        return ReservaDto.de(reservas.save(
-                new Reserva(utilizador, viaturaId, viatura.matricula(), taxa, porMinuto, porKm, kmInicial)));
+        Reserva reserva = new Reserva(utilizador, viaturaId, viatura.matricula(), taxa, porMinuto, porKm, kmInicial);
+        // Onde está o carro agora: é o início do trajeto da viagem.
+        reserva.guardarLocalInicial(viatura.latitude(), viatura.longitude());
+        return ReservaDto.de(reservas.save(reserva));
     }
 
     /**
