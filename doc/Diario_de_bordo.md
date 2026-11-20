@@ -1,11 +1,20 @@
 # DriveNow — Diário de bordo
 
-16/11/2026 · Mateus
+20/11/2026 · Mateus
 
 Registo do trabalho do Grupo 1 (PL5) no projeto DriveNow de IAIE, do mais recente para o mais antigo.
 
 | Data | O que foi feito | Decisões e problemas |
 | --- | --- | --- |
+| 20/11 | Requisitos, plano e funcionamento não técnico atualizados (RF18 a RF20, RI10 a RI12, RNF11 e RNF12; secções novas de revisões e oficina) | Moloni marcado como em pausa e SAP Build Apps como abandonado; o aviso dos documentos é uma nota no carro, não um email |
+| 20/11 | Revisões por km (diagrama 6): módulo `drivenow_danos` 19.0.1.3.0 com os km da próxima revisão, o serviço "Revisão" e o menu Frota → Revisões; backend tira do mapa os carros com "Revisão por fazer"; script `scripts/revisoes.py` | Revisão a cada 15 000 km para os 30 carros; ao atualizar o módulo, cada carro fica com o múltiplo de 15 000 km seguinte; ao concluir uma ordem, a próxima passa para +15 000 km. Sem n8n, é o backend que cria a ordem de revisão. Os menus novos só aparecem depois de recarregar a página do Odoo |
+| 20/11 | Trajeto da viagem: a reserva guarda o local de início e de fim; o backend pede o percurso pelas ruas ao serviço de rotas OSRM e guarda-o; mapa do trajeto no resumo da viagem | Trajeto simulado, porque o carro não é seguido por GPS; os km cobrados são os do painel. Se o OSRM não responder, a viagem termina na mesma e a app mostra a linha reta |
+| 20/11 | Preço por km: campo no tarifário do Odoo (`4_precos.csv`); a reserva guarda os km iniciais; km do painel obrigatórios no fim; preço = taxa + minutos × preço/min + km × preço/km + penalizações; app com o preço/km no mapa, na confirmação e no resumo | Preço/km por escalão da taxa de entrada: 0,10 €, 0,15 € (a maioria), 0,25 € e 0,40 €. Os km do painel não podem ser inferiores aos iniciais nem dar mais de 1000 km. O Odoo tem de estar ligado antes do backend ("Não foi possível contactar o Odoo") |
+| 20/11 | Documentação v3: arquitetura v3, diagramas 1 a 7 (novos: 6 Revisões por km e 7 Armazém e compras) e documento "Oficina, revisões e peças"; versões antigas em `doc/Diagramas/old version` | Diagramas 2 e 4 divididos (2a/2b e 4a/4b) por serem grandes. Carros elétricos: as revisões não têm óleo. Objeto do Git corrompido no portátil, resolvido com `git fsck` |
+| 18/11 | PL com o docente (ver ata de 18/11) | React aceite; Moloni em pausa (registo na AT tratado pelo regente); pagamentos só com cartões fictícios; tempo desde a reserva, com confirmação antes. A juntar: preço por km, trajeto simulado, revisões por km e oficina com stock de peças. Para a próxima aula: definir o que cada sistema faz |
+| 18/11 | Mapa da app passou para o OpenStreetMap; script `scripts/bloquear_carros.py` para testar o bloqueio por documentos caducados | O CARTO passou a mostrar "API KEY REQUIRED" e começou a exigir chave |
+| 17/11 | App em React a partir dos mockups (`src/frontend`), ligada ao backend: entrar, criar conta, mapa, reserva, viagem, estado do carro no início e no fim, viagem terminada, viagens e faturas, perfil; modo demonstração e versão num só ficheiro | Confirmação antes de reservar, com os dados do carro, porque o tempo conta desde a reserva. React em vez do SAP Build Apps (confirmado na PL de 18/11) |
+| 17/11 | Portátil preparado com o Odoo, o backend e a app; cópia de segurança do Odoo (frota, danos e documentos) | No portátil, a base de dados do Odoo chama-se "DriveNow": o backend dava 404 "No database is selected" até corrigir o `ODOO_DB` |
 | 16/11 | Diagrama 5: documentos dos carros (seguro, inspeção e IUC) no Odoo, 90 registos; bloqueio no backend; alerta diário no n8n; renovação testada | Os documentos ficam como contratos da viatura no Odoo; o alerta é uma nota no carro, sem email |
 | 16/11 | n8n instalado em Docker, com os fluxos cliente registado → SAP, viagem terminada → Odoo e dano reportado → Odoo; fluxos exportados para `infra/n8n/workflows` | O backend não recebia resposta do n8n (o Java pedia HTTP/2): forçado HTTP/1.1. Se o n8n falhar, o backend grava km e danos diretamente |
 | 16/11 | SAP: cliente criado pela API em rascunho, com papel de cliente (FLCU01) e morada; coleção do Postman exportada para o repositório | A ativação falha com "CHECK\_TABLE\_MISSING" (configuração do s20) e a `API_BUSINESS_PARTNER` não está ativa: pergunta para o docente |
@@ -16,4 +25,4 @@ Registo do trabalho do Grupo 1 (PL5) no projeto DriveNow de IAIE, do mais recent
 | 05/11 a 10/11 | Odoo 19 em Docker com 30 viaturas e módulo `drivenow_danos` (danos e tarifário); backend Spring Boot (mapa GPS, reservas, relatos, danos, preço); Moloni ligado; Postman com o SAP; diagramas 1 a 5 refeitos | React substituído pelo SAP Build Apps; n8n para orquestrar; Odoo como referência das viaturas porque os produtos do s20 são da Global Bike |
 | 04/11 | Plano de arranque do projeto: passos 1 a 6 e divisão inicial de tarefas | Arquitetura inicial com React e Spring Boot |
 
-As datas entre 05/11 e 10/11 estão agrupadas; acertar o dia de cada tarefa, se for preciso.
+As datas entre 05/11 e 10/11 estão agrupadas; acertar o dia de cada tarefa, se for preciso. A partir de 17/11 as datas seguem os commits no GitHub; a documentação v3 começou a ser feita logo a seguir à PL de 18/11.
