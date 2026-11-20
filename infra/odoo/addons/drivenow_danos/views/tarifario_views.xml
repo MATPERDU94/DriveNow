@@ -10,6 +10,7 @@
                 <field name="name" string="Modelo"/>
                 <field name="entry_fee"/>
                 <field name="price_per_minute"/>
+                <field name="price_per_km"/>
             </list>
         </field>
     </record>

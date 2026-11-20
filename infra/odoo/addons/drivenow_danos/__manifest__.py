@@ -1,6 +1,6 @@
 {
     'name': 'DriveNow - Danos',
-    'version': '19.0.1.1.0',
+    'version': '19.0.1.2.0',
     'summary': 'DriveNow: tabela de custos de danos, registo de danos e tarifário da frota',
     'category': 'Human Resources/Fleet',
     'depends': ['fleet'],
