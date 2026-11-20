@@ -36,10 +36,10 @@ import pt.drivenow.utilizadores.UtilizadorRepository;
 
 /**
  * Emite no Moloni a fatura-recibo de uma viagem terminada:
- * taxa de entrada + minutos de viagem + uma linha por penalização de dano.
+ * taxa de entrada + minutos de viagem + km percorridos + uma linha por penalização de dano.
  *
  * Os preços do tarifário incluem IVA; no Moloni as linhas levam o preço sem IVA.
- * Os artigos têm de existir no Moloni com as referências DN-TAXA, DN-MIN e DN-DANO.
+ * Os artigos têm de existir no Moloni com as referências DN-TAXA, DN-MIN, DN-KM e DN-DANO.
  */
 @Service
 public class FaturacaoService {
@@ -48,6 +48,7 @@ public class FaturacaoService {
 
     static final String REF_TAXA = "DN-TAXA";
     static final String REF_MINUTO = "DN-MIN";
+    static final String REF_KM = "DN-KM";
     static final String REF_DANO = "DN-DANO";
     /** NIF genérico de "consumidor final", usado quando o cliente não indicou NIF. */
     static final String NIF_CONSUMIDOR_FINAL = "999999990";
@@ -184,6 +185,11 @@ public class FaturacaoService {
                 + r.getMatricula() + " (" + r.getMinutos() + " min)";
         linhas.add(linha(artigo(REF_MINUTO), descricao,
                 r.getMinutos() == null ? 0 : r.getMinutos(), r.getPrecoMinuto(), iva));
+        if (r.getValorKm() != null && r.getValorKm().signum() > 0) {
+            // Uma linha com o valor total dos km (os km podem ter casas decimais).
+            linhas.add(linha(artigo(REF_KM), "Km percorridos " + r.getMatricula() + " (" + formatarKm(r.getKmViagem())
+                    + " km x " + r.getPrecoKm().toPlainString().replace('.', ',') + " €)", 1, r.getValorKm(), iva));
+        }
         Relato fim = relatos.comDanos(r.getId(), TipoRelato.FIM).orElse(null);
         if (fim != null) {
             for (RelatoDano d : fim.getDanos()) {
@@ -328,6 +334,13 @@ public class FaturacaoService {
         a = new Artigo(p.path("product_id").asLong(), p.path("name").asText(), impostos);
         artigos.put(referencia, a);
         return a;
+    }
+
+    private static String formatarKm(Double km) {
+        if (km == null) {
+            return "0";
+        }
+        return km == Math.rint(km) ? String.valueOf(km.longValue()) : String.valueOf(km).replace('.', ',');
     }
 
     private static long primeiroId(JsonNode lista, String campo, String descricao) {

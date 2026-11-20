@@ -37,6 +37,9 @@ public class RelatoService {
     public record DanoReportado(Long tipoDanoId, String descricao) {
     }
 
+    /** Uma viagem com mais km do que isto é quase de certeza um erro ao escrever os km do painel. */
+    static final double MAX_KM_VIAGEM = 1000;
+
     private final RelatoRepository relatos;
     private final ReservaService reservas;
     private final ReservaRepository reservaRepository;
@@ -69,9 +72,7 @@ public class RelatoService {
                 throw new RegraNegocioException("O relato de FIM tem de indicar a latitude e a longitude onde o carro ficou");
             }
             LocalizacaoService.validar(latitude, longitude);
-            if (quilometragem != null) {
-                validarQuilometragem(reserva.getViaturaOdooId(), quilometragem);
-            }
+            validarQuilometragem(reserva, quilometragem);
         }
         if (relatos.existsByReservaIdAndTipo(reservaId, tipo)) {
             throw new RegraNegocioException("Esta reserva já tem um relato de " + tipo);
@@ -133,21 +134,20 @@ public class RelatoService {
                 responsavel.adicionarPenalizacao(cobrado);
             }
         } else {
-            reserva.terminarViagem(cobrado);
+            reserva.terminarViagem(cobrado, quilometragem);
             localizacao.atualizar(reserva.getViaturaOdooId(), latitude, longitude);
-            if (quilometragem != null) {
-                // Diagrama 2: o evento "viagem terminada" vai para o n8n, que atualiza a quilometragem no Odoo.
-                // Se o n8n não estiver configurado ou não responder, o backend regista-a diretamente.
-                Map<String, Object> evento = new LinkedHashMap<>();
-                evento.put("reservaId", reserva.getId());
-                evento.put("viaturaId", reserva.getViaturaOdooId());
-                evento.put("matricula", reserva.getMatricula());
-                evento.put("quilometragem", quilometragem);
-                evento.put("latitude", latitude);
-                evento.put("longitude", longitude);
-                if (!n8n.enviar("viagem-terminada", evento)) {
-                    frota.registarQuilometragem(reserva.getViaturaOdooId(), quilometragem);
-                }
+            // Diagrama 2b: o evento "viagem terminada" vai para o n8n, que atualiza a quilometragem no Odoo.
+            // Se o n8n não estiver configurado ou não responder, o backend regista-a diretamente.
+            Map<String, Object> evento = new LinkedHashMap<>();
+            evento.put("reservaId", reserva.getId());
+            evento.put("viaturaId", reserva.getViaturaOdooId());
+            evento.put("matricula", reserva.getMatricula());
+            evento.put("quilometragem", quilometragem);
+            evento.put("kmViagem", reserva.getKmViagem());
+            evento.put("latitude", latitude);
+            evento.put("longitude", longitude);
+            if (!n8n.enviar("viagem-terminada", evento)) {
+                frota.registarQuilometragem(reserva.getViaturaOdooId(), quilometragem);
             }
         }
         return RelatoDto.de(relato);
@@ -158,12 +158,36 @@ public class RelatoService {
         return relatos.findByReservaIdOrderByCriadoEm(reservaId).stream().map(RelatoDto::de).toList();
     }
 
-    private void validarQuilometragem(long viaturaId, double km) {
-        Double atual = frota.obter(viaturaId).map(ViaturaDto::quilometragem).orElse(null);
-        if (atual != null && km < atual) {
-            throw new RegraNegocioException("A quilometragem final (" + km
-                    + ") não pode ser inferior à atual (" + atual + ")");
+    /**
+     * Diagrama 2b: os km do painel são obrigatórios no fim da viagem e não podem ser inferiores
+     * aos km do carro no momento da reserva.
+     */
+    private void validarQuilometragem(Reserva reserva, Double km) {
+        if (km == null) {
+            throw new RegraNegocioException("Indique os km do painel no fim da viagem");
         }
+        if (km.isNaN() || km.isInfinite() || km < 0) {
+            throw new RegraNegocioException("Os km do painel não são válidos");
+        }
+        // Reservas feitas antes de existirem km iniciais: compara-se com os km atuais do Odoo.
+        Double inicial = reserva.getKmInicial() != null ? reserva.getKmInicial()
+                : frota.obter(reserva.getViaturaOdooId()).map(ViaturaDto::quilometragem).orElse(null);
+        if (inicial == null) {
+            return;
+        }
+        if (km < inicial) {
+            throw new RegraNegocioException("Os km do painel (" + formatarKm(km)
+                    + ") não podem ser inferiores aos km no início da viagem (" + formatarKm(inicial) + ")");
+        }
+        if (km - inicial > MAX_KM_VIAGEM) {
+            throw new RegraNegocioException("Com " + formatarKm(km) + " km no painel, a viagem teria "
+                    + formatarKm(km - inicial) + " km (máximo " + formatarKm(MAX_KM_VIAGEM)
+                    + " km). Confirme os km do painel");
+        }
+    }
+
+    private static String formatarKm(double km) {
+        return km == Math.rint(km) ? String.valueOf((long) km) : String.valueOf(Math.round(km * 10) / 10.0);
     }
 
     private static void validarEstado(Reserva reserva, TipoRelato tipo) {

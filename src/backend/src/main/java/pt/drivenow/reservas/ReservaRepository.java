@@ -27,4 +27,7 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
     /** Última viagem concluída nesta viatura antes da reserva indicada (o "condutor anterior"). */
     Optional<Reserva> findFirstByViaturaOdooIdAndEstadoAndIdLessThanOrderByFimViagemDesc(
             Long viaturaOdooId, EstadoReserva estado, Long reservaId);
+
+    /** Última viagem desta viatura com km finais (para os km iniciais da reserva seguinte). */
+    Optional<Reserva> findFirstByViaturaOdooIdAndKmFinalNotNullOrderByFimViagemDesc(Long viaturaOdooId);
 }

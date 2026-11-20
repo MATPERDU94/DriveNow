@@ -22,9 +22,10 @@ import pt.drivenow.utilizadores.Utilizador;
 /**
  * Reserva de uma viatura e respetiva viagem.
  *
- * Preço: taxa de entrada (cobrada ao reservar) + minutos × preço por minuto + penalizações.
+ * Preço: taxa de entrada (cobrada ao reservar) + minutos × preço por minuto + km × preço por km + penalizações.
  * O temporizador começa no momento da reserva (criadaEm) e para no fim da viagem ou no cancelamento.
- * Os preços são copiados do Odoo no momento da reserva, para não mudarem a meio da viagem.
+ * Os km da viagem são os km do painel no fim menos os km do carro no momento da reserva.
+ * Os preços e os km iniciais são copiados no momento da reserva, para não mudarem a meio da viagem.
  */
 @Entity
 @Table(name = "reserva")
@@ -61,6 +62,22 @@ public class Reserva {
     @Column(precision = 10, scale = 2)
     private BigDecimal precoMinuto;
 
+    @Column(precision = 10, scale = 2)
+    private BigDecimal precoKm;
+
+    /** Km do carro no momento da reserva. */
+    private Double kmInicial;
+
+    /** Km do painel indicados pelo cliente no fim da viagem. */
+    private Double kmFinal;
+
+    /** km finais - km iniciais (0 se a reserva foi cancelada). */
+    private Double kmViagem;
+
+    /** km da viagem × preço por km. */
+    @Column(precision = 10, scale = 2)
+    private BigDecimal valorKm;
+
     /** Minutos desde a reserva até ao fim ou cancelamento (cada minuto começado conta). */
     private Long minutos;
 
@@ -71,7 +88,7 @@ public class Reserva {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal totalPenalizacoes = BigDecimal.ZERO;
 
-    /** taxa de entrada + valor da viagem + penalizações. */
+    /** taxa de entrada + valor dos minutos + valor dos km + penalizações. */
     @Column(precision = 10, scale = 2)
     private BigDecimal total;
 
@@ -97,12 +114,14 @@ public class Reserva {
     }
 
     public Reserva(Utilizador utilizador, Long viaturaOdooId, String matricula,
-            BigDecimal taxaEntrada, BigDecimal precoMinuto) {
+            BigDecimal taxaEntrada, BigDecimal precoMinuto, BigDecimal precoKm, Double kmInicial) {
         this.utilizador = utilizador;
         this.viaturaOdooId = viaturaOdooId;
         this.matricula = matricula;
         this.taxaEntrada = taxaEntrada.setScale(2, RoundingMode.HALF_UP);
         this.precoMinuto = precoMinuto.setScale(2, RoundingMode.HALF_UP);
+        this.precoKm = precoKm.setScale(2, RoundingMode.HALF_UP);
+        this.kmInicial = kmInicial;
         this.total = this.taxaEntrada;
     }
 
@@ -111,17 +130,24 @@ public class Reserva {
         this.inicioViagem = Instant.now();
     }
 
-    public void terminarViagem(BigDecimal penalizacoes) {
+    /** Fim da viagem: para o temporizador, calcula os km da viagem e o total. */
+    public void terminarViagem(BigDecimal penalizacoes, double kmFinal) {
         this.estado = EstadoReserva.CONCLUIDA;
         pararTemporizador();
+        this.kmFinal = kmFinal;
+        // Reservas feitas antes de existirem km iniciais ficam com 0 km.
+        this.kmViagem = kmInicial == null ? 0.0 : Math.round(Math.max(0, kmFinal - kmInicial) * 10) / 10.0;
+        this.valorKm = precoKm().multiply(BigDecimal.valueOf(kmViagem)).setScale(2, RoundingMode.HALF_UP);
         this.totalPenalizacoes = penalizacoes.setScale(2, RoundingMode.HALF_UP);
-        this.total = taxaEntrada().add(valorViagem).add(totalPenalizacoes);
+        this.total = taxaEntrada().add(valorViagem).add(valorKm).add(totalPenalizacoes);
     }
 
-    /** Cancelar antes de começar: paga a taxa de entrada e os minutos que o carro esteve bloqueado. */
+    /** Cancelar antes de começar: paga a taxa de entrada e os minutos que o carro esteve bloqueado (0 km). */
     public void cancelar() {
         this.estado = EstadoReserva.CANCELADA;
         pararTemporizador();
+        this.kmViagem = 0.0;
+        this.valorKm = BigDecimal.ZERO.setScale(2);
         this.total = taxaEntrada().add(valorViagem).add(totalPenalizacoes);
     }
 
@@ -136,7 +162,7 @@ public class Reserva {
         return minutosEntre(criadaEm, fimViagem != null ? fimViagem : Instant.now());
     }
 
-    /** Valor da reserva ativa até agora: taxa de entrada + minutos × preço por minuto. */
+    /** Valor da reserva ativa até agora: taxa de entrada + minutos × preço por minuto (os km somam-se no fim). */
     public BigDecimal valorAteAgora() {
         return taxaEntrada().add(precoMinuto().multiply(BigDecimal.valueOf(minutosAteAgora())))
                 .setScale(2, RoundingMode.HALF_UP);
@@ -178,6 +204,7 @@ public class Reserva {
     // Reservas criadas antes de existirem preços ficam com 0.
     private BigDecimal taxaEntrada() { return taxaEntrada != null ? taxaEntrada : BigDecimal.ZERO; }
     private BigDecimal precoMinuto() { return precoMinuto != null ? precoMinuto : BigDecimal.ZERO; }
+    private BigDecimal precoKm() { return precoKm != null ? precoKm : BigDecimal.ZERO; }
 
     public Long getId() { return id; }
     public Utilizador getUtilizador() { return utilizador; }
@@ -189,8 +216,13 @@ public class Reserva {
     public Instant getFimViagem() { return fimViagem; }
     public BigDecimal getTaxaEntrada() { return taxaEntrada; }
     public BigDecimal getPrecoMinuto() { return precoMinuto; }
+    public BigDecimal getPrecoKm() { return precoKm; }
     public Long getMinutos() { return minutos; }
     public BigDecimal getValorViagem() { return valorViagem; }
+    public Double getKmInicial() { return kmInicial; }
+    public Double getKmFinal() { return kmFinal; }
+    public Double getKmViagem() { return kmViagem; }
+    public BigDecimal getValorKm() { return valorKm; }
     public BigDecimal getTotalPenalizacoes() { return totalPenalizacoes; }
     public BigDecimal getTotal() { return total; }
     public EstadoPagamento getEstadoPagamento() { return estadoPagamento != null ? estadoPagamento : EstadoPagamento.PENDENTE; }

@@ -61,7 +61,25 @@ public class ReservaService {
         }
         BigDecimal taxa = BigDecimal.valueOf(viatura.taxaEntrada() != null ? viatura.taxaEntrada() : 0);
         BigDecimal porMinuto = BigDecimal.valueOf(viatura.precoMinuto());
-        return ReservaDto.de(reservas.save(new Reserva(utilizador, viaturaId, viatura.matricula(), taxa, porMinuto)));
+        BigDecimal porKm = BigDecimal.valueOf(viatura.precoKm() != null ? viatura.precoKm() : 0);
+        // Diagrama 2a: guardar na reserva os preços e os km iniciais do carro.
+        Double kmInicial = kmAtuais(viaturaId, viatura.quilometragem());
+        return ReservaDto.de(reservas.save(
+                new Reserva(utilizador, viaturaId, viatura.matricula(), taxa, porMinuto, porKm, kmInicial)));
+    }
+
+    /**
+     * Km do carro no momento da reserva: os do Odoo ou, se forem maiores, os km finais da última viagem
+     * (o Odoo pode ainda não ter recebido a atualização da última viagem, que passa pelo n8n).
+     */
+    private Double kmAtuais(long viaturaId, Double kmOdoo) {
+        Double ultimaViagem = reservas.findFirstByViaturaOdooIdAndKmFinalNotNullOrderByFimViagemDesc(viaturaId)
+                .map(Reserva::getKmFinal)
+                .orElse(null);
+        if (kmOdoo == null) {
+            return ultimaViagem;
+        }
+        return ultimaViagem == null ? kmOdoo : Math.max(kmOdoo, ultimaViagem);
     }
 
     @Transactional(readOnly = true)
@@ -111,7 +129,7 @@ public class ReservaService {
             throw new RegraNegocioException("Só é possível cancelar reservas que ainda não começaram");
 
         }
-        // Diagrama 2: ao cancelar, o temporizador para e paga-se a taxa de entrada e os minutos decorridos.
+        // Diagrama 2b: ao cancelar, o temporizador para e paga-se a taxa de entrada e os minutos decorridos (0 km).
         r.cancelar();
         return ReservaDto.de(r);
     }

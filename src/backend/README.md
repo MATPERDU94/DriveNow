@@ -115,21 +115,25 @@ curl -s localhost:8080/api/me -H "Authorization: Bearer $TOKEN" | python3 -m jso
 | GET | `/api/reservas/{id}` | Uma reserva |
 | POST | `/api/reservas/{id}/cancelar` | Cancelar (só antes de começar) |
 | POST | `/api/reservas/{id}/faturar` | Emitir (ou repetir) a fatura-recibo no Moloni |
-| POST | `/api/reservas/{id}/relatos` | Relato `{tipo: INICIO/FIM, observacoes, danos: [{tipoDanoId, descricao}], latitude, longitude, quilometragem}` (coordenadas obrigatórias no FIM; quilometragem opcional) |
+| POST | `/api/reservas/{id}/relatos` | Relato `{tipo: INICIO/FIM, observacoes, danos: [{tipoDanoId, descricao}], latitude, longitude, quilometragem}` (coordenadas e quilometragem obrigatórias no FIM) |
 | GET | `/api/reservas/{id}/relatos` | Relatos da reserva |
 
 ## Preço da viagem
 
 ```
-total = taxa de entrada + minutos × preço por minuto + penalizações
+total = taxa de entrada + minutos × preço por minuto + km × preço por km + penalizações
 ```
 
-- Os preços estão no Odoo, por modelo, em **Frota → Tarifário** (ex.: Renault Zoe 10 € + 0,18 €/min; Porsche Taycan 200 € + 0,63 €/min).
+- Os preços estão no Odoo, por modelo, em **Frota → Tarifário** (ex.: Renault Zoe 10 € + 0,18 €/min + 0,10 €/km; Porsche Taycan 200 € + 0,63 €/min + 0,40 €/km). Os valores vêm de `CSV/Odoo/4_precos.csv`.
+- **Km da viagem** = km do painel no fim (relato de FIM, obrigatórios) − km do carro no momento da reserva (`kmInicial`). Os km iniciais são os do Odoo ou, se forem maiores, os km finais da última viagem desse carro.
+- Os km do painel não podem ser inferiores aos km iniciais, nem dar uma viagem com mais de 1000 km (quase de certeza um engano ao escrever).
+- A reserva guarda `precoKm`, `kmInicial`, `kmFinal`, `kmViagem` e `valorKm` (km da viagem × preço por km).
 - A **taxa de entrada** é fixada ao reservar e não é devolvida se a reserva for cancelada.
 - O **temporizador começa no momento da reserva** e para no relato de fim (ou no cancelamento); cada minuto começado conta (mínimo 1).
 - Enquanto a reserva está ativa, `minutosDecorridos` e `valorAteAgora` dão o tempo e o valor até ao momento (ecrã "Em viagem").
-- **Cancelar** (antes do relato de início) paga a taxa de entrada e os minutos decorridos, e é faturado.
+- **Cancelar** (antes do relato de início) paga a taxa de entrada e os minutos decorridos (0 km), e é faturado.
 - Os preços são copiados para a reserva no momento em que é criada: se o tarifário mudar a meio da viagem, o cliente paga o preço que viu.
+- O `valorAteAgora` (ecrã "Em viagem") ainda não inclui os km: só se sabem no fim.
 - Não é possível reservar uma viatura sem preço por minuto definido no Odoo.
 
 ## Faturação (Moloni)
@@ -140,9 +144,10 @@ No fim de cada viagem (relato de FIM), o backend emite no Moloni uma **fatura-re
 |---|---|
 | Taxa de entrada | `DN-TAXA` |
 | Minutos de viagem (qtd = minutos) | `DN-MIN` |
+| Km percorridos (qtd = 1, preço = km × preço/km) | `DN-KM` |
 | Uma linha por penalização de dano | `DN-DANO` |
 
-- Os três artigos têm de ser criados uma vez no Moloni (**Tabelas → Artigos**), do tipo **Serviço** e com **IVA 23%**.
+- Os quatro artigos têm de ser criados uma vez no Moloni (**Tabelas → Artigos**), do tipo **Serviço** e com **IVA 23%**.
 - Os preços do tarifário **incluem IVA**; no Moloni as linhas levam o preço sem IVA.
 - O cliente é criado no Moloni com o NIF do utilizador (ou como "Consumidor final", NIF 999999990, se não tiver NIF).
 - `MOLONI_FECHAR_DOCUMENTOS=false` (por omissão): a fatura fica em **rascunho**, sem valor fiscal e sem PDF. Com `true`, é finalizada e o `faturaPdfUrl` da reserva traz o link do PDF.
@@ -162,7 +167,7 @@ Para cada dano assinalado num relato:
 
 - Um utilizador só pode ter uma reserva ativa; só se reservam viaturas disponíveis (não reservadas nem em reparação).
 - Relato de **início**: só com a reserva em `RESERVADA`; passa a `EM_CURSO`.
-- Relato de **fim**: só com a reserva em `EM_CURSO`; passa a `CONCLUIDA`, calcula o preço, e a posição da viatura é atualizada com as coordenadas enviadas. Se vier a quilometragem, é registada no Odoo (não pode ser inferior à atual).
+- Relato de **fim**: só com a reserva em `EM_CURSO`; passa a `CONCLUIDA`, calcula os km da viagem e o preço, e a posição da viatura é atualizada com as coordenadas enviadas. A quilometragem é obrigatória e é registada no Odoo (pelo n8n ou, se o n8n não responder, pelo backend).
 - Não há hubs: cada viatura tem uma posição GPS. No primeiro arranque, as viaturas sem posição ficam distribuídas por 30 pontos de Guimarães.
 - `disponivel` é `false` enquanto a viatura estiver numa reserva ativa.
 

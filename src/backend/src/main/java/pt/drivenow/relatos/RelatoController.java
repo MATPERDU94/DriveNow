@@ -30,7 +30,8 @@ public class RelatoController {
      * {"tipo": "FIM", "observacoes": "Risco na porta", "latitude": 41.4525, "longitude": -8.2898, "quilometragem": 3912,
      *  "danos": [{"tipoDanoId": 5, "descricao": "porta traseira"}]}
      * A latitude e a longitude (onde o carro ficou estacionado) são obrigatórias no relato de FIM.
-     * A quilometragem é opcional: se vier, é registada no Odoo.
+     * A quilometragem (km do painel) também é obrigatória no FIM: dá os km da viagem
+     * (km do painel - km no momento da reserva), que se cobram ao preço por km, e é registada no Odoo.
      */
     public record CriarRelatoRequest(
             @NotNull TipoRelato tipo,

@@ -42,11 +42,13 @@ viagem() {  # $1 = descrição; reserva a viatura livre mais próxima, começa e
   echo "   viatura escolhida: id $VIATURA"
   RES=$(post /api/reservas "{\"viaturaId\":$VIATURA}")
   RESERVA=$(echo "$RES" | campo id) || exit 1
-  echo "$RES" | resumo id,matricula,estado,taxaEntrada,precoMinuto,valorAteAgora
+  echo "$RES" | resumo id,matricula,estado,taxaEntrada,precoMinuto,precoKm,kmInicial,valorAteAgora
+  KM_FIM=$(echo "$RES" | python3 -c "import sys,json; print(round((json.load(sys.stdin).get('kmInicial') or 0) + 12))")
   post /api/reservas/$RESERVA/relatos '{"tipo":"INICIO","danos":[]}' > /dev/null
   sleep 2
-  post /api/reservas/$RESERVA/relatos "{\"tipo\":\"FIM\",\"latitude\":$LAT,\"longitude\":$LNG,\"danos\":[]}" > /dev/null
-  get /api/reservas/$RESERVA | resumo estado,minutos,total,estadoPagamento,pagamentoDescricao
+  echo "   fim da viagem com $KM_FIM km no painel (12 km de viagem)"
+  post /api/reservas/$RESERVA/relatos "{\"tipo\":\"FIM\",\"latitude\":$LAT,\"longitude\":$LNG,\"quilometragem\":$KM_FIM,\"danos\":[]}" > /dev/null
+  get /api/reservas/$RESERVA | resumo estado,minutos,kmViagem,valorKm,total,estadoPagamento,pagamentoDescricao
 }
 
 echo "== 1) Criar conta com cartão que APROVA (4242 4242 4242 4242)"

@@ -34,7 +34,7 @@ public class FrotaService {
     private static final String MODELO = "fleet.vehicle";
     private static final List<String> CAMPOS = List.of(
             "license_plate", "model_id", "model_year", "seats", "odometer", "state_id",
-            "entry_fee", "price_per_minute");
+            "entry_fee", "price_per_minute", "price_per_km");
     private static final Set<EstadoReserva> ATIVAS = EnumSet.of(EstadoReserva.RESERVADA, EstadoReserva.EM_CURSO);
 
     private final OdooClient odoo;
@@ -133,6 +133,7 @@ public class FrotaService {
                 nomeDe(r.get("state_id")),
                 numero(r.get("entry_fee")),
                 numero(r.get("price_per_minute")),
+                numero(r.get("price_per_km")),
                 null, null, true, null, null);
     }
 }
