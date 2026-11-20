@@ -21,6 +21,7 @@ import pt.drivenow.reservas.EstadoReserva;
 import pt.drivenow.reservas.Reserva;
 import pt.drivenow.reservas.ReservaRepository;
 import pt.drivenow.reservas.ReservaService;
+import pt.drivenow.revisoes.RevisaoService;
 
 /**
  * Relatos de início e de fim de viagem (diagramas 2 e 4).
@@ -47,11 +48,12 @@ public class RelatoService {
     private final LocalizacaoService localizacao;
     private final FrotaService frota;
     private final N8nClient n8n;
+    private final RevisaoService revisoes;
     private final BigDecimal franquia;
 
     public RelatoService(RelatoRepository relatos, ReservaService reservas, ReservaRepository reservaRepository,
             DanoService danos, LocalizacaoService localizacao, FrotaService frota, N8nClient n8n,
-            @Value("${drivenow.franquia:1000}") BigDecimal franquia) {
+            RevisaoService revisoes, @Value("${drivenow.franquia:1000}") BigDecimal franquia) {
         this.relatos = relatos;
         this.reservas = reservas;
         this.reservaRepository = reservaRepository;
@@ -59,6 +61,7 @@ public class RelatoService {
         this.localizacao = localizacao;
         this.frota = frota;
         this.n8n = n8n;
+        this.revisoes = revisoes;
         this.franquia = franquia.setScale(2, RoundingMode.HALF_UP);
     }
 
@@ -148,6 +151,8 @@ public class RelatoService {
             evento.put("longitude", longitude);
             if (!n8n.enviar("viagem-terminada", evento)) {
                 frota.registarQuilometragem(reserva.getViaturaOdooId(), quilometragem);
+                // Diagrama 6 sem n8n: se o carro chegou aos km da revisão, cria a ordem de revisão no Odoo.
+                revisoes.verificarDepoisDaViagem(reserva.getViaturaOdooId(), quilometragem);
             }
         }
         return RelatoDto.de(relato);

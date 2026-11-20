@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Em cada atualização do módulo: carros sem "km da próxima revisão" ficam com o próximo múltiplo de 15 000 km -->
+    <function model="fleet.vehicle" name="_drivenow_inicializar_revisoes"/>
+</odoo>

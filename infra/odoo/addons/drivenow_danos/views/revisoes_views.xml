@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Ficha do carro: km da próxima revisão -->
+    <record id="view_fleet_vehicle_form_revisao" model="ir.ui.view">
+        <field name="name">drivenow.fleet.vehicle.form.revisao</field>
+        <field name="model">fleet.vehicle</field>
+        <field name="inherit_id" ref="fleet.fleet_vehicle_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='manager_id']" position="before">
+                <field name="next_service_km"/>
+                <field name="km_to_service"/>
+                <field name="service_status" widget="badge"
+                       decoration-success="service_status == 'ok'"
+                       decoration-warning="service_status == 'soon'"
+                       decoration-danger="service_status == 'due'"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Lista de revisões por km: todos os carros, com os km que faltam -->
+    <record id="view_revisoes_list" model="ir.ui.view">
+        <field name="name">drivenow.revisoes.list</field>
+        <field name="model">fleet.vehicle</field>
+        <field name="priority">50</field>
+        <field name="arch" type="xml">
+            <list editable="bottom" create="0" delete="0"
+                  decoration-danger="service_status == 'due'" decoration-warning="service_status == 'soon'">
+                <field name="license_plate" readonly="1"/>
+                <field name="model_id" readonly="1"/>
+                <field name="odometer" string="Km atuais" readonly="1"/>
+                <field name="next_service_km"/>
+                <field name="km_to_service"/>
+                <field name="service_status" widget="badge"
+                       decoration-success="service_status == 'ok'"
+                       decoration-warning="service_status == 'soon'"
+                       decoration-danger="service_status == 'due'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_revisoes_km" model="ir.actions.act_window">
+        <field name="name">Revisões por km</field>
+        <field name="res_model">fleet.vehicle</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_revisoes_list"/>
+    </record>
+
+    <!-- Ordens de revisão: os serviços "Revisão" (Novo → Em curso → Concluído) -->
+    <record id="action_ordens_revisao" model="ir.actions.act_window">
+        <field name="name">Ordens de revisão</field>
+        <field name="res_model">fleet.vehicle.log.services</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('service_type_id.is_revision', '=', True)]</field>
+        <field name="context" eval="{'default_service_type_id': ref('servico_revisao')}"/>
+    </record>
+
+    <menuitem id="menu_revisoes" name="Revisões" parent="fleet.menu_root" sequence="52"/>
+    <menuitem id="menu_revisoes_km" name="Revisões por km" parent="menu_revisoes" action="action_revisoes_km" sequence="1"/>
+    <menuitem id="menu_ordens_revisao" name="Ordens de revisão" parent="menu_revisoes" action="action_ordens_revisao" sequence="2"/>
+</odoo>

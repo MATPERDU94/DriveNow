@@ -13,3 +13,5 @@ class FleetServiceType(models.Model):
     ], string='Gravidade', default='ligeiro')
     blocks_vehicle = fields.Boolean('Imobiliza o carro')
     damage_description = fields.Text('Descrição para o cliente')
+    is_revision = fields.Boolean('É a revisão por km', default=False, index=True,
+                                 help='Serviço "Revisão" da oficina DriveNow (a cada 15 000 km).')

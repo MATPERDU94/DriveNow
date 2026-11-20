@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- Serviço da oficina DriveNow a cada 15 000 km (diagrama 6) -->
+    <record id="servico_revisao" model="fleet.service.type">
+        <field name="name">Revisão</field>
+        <field name="category">service</field>
+        <field name="is_revision" eval="True"/>
+        <field name="is_damage" eval="False"/>
+    </record>
+</odoo>

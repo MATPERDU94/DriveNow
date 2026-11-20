@@ -23,6 +23,7 @@ import pt.drivenow.localizacao.PosicaoViatura;
 import pt.drivenow.odoo.OdooClient;
 import pt.drivenow.reservas.EstadoReserva;
 import pt.drivenow.reservas.ReservaRepository;
+import pt.drivenow.revisoes.RevisaoService;
 
 /**
  * Frota: os dados de cada viatura vêm do Odoo (fleet.vehicle);
@@ -34,7 +35,7 @@ public class FrotaService {
     private static final String MODELO = "fleet.vehicle";
     private static final List<String> CAMPOS = List.of(
             "license_plate", "model_id", "model_year", "seats", "odometer", "state_id",
-            "entry_fee", "price_per_minute", "price_per_km");
+            "entry_fee", "price_per_minute", "price_per_km", "next_service_km");
     private static final Set<EstadoReserva> ATIVAS = EnumSet.of(EstadoReserva.RESERVADA, EstadoReserva.EM_CURSO);
 
     private final OdooClient odoo;
@@ -42,14 +43,16 @@ public class FrotaService {
     private final ReservaRepository reservas;
     private final DanoService danos;
     private final DocumentoService documentos;
+    private final RevisaoService revisoes;
 
     public FrotaService(OdooClient odoo, LocalizacaoService localizacao, ReservaRepository reservas,
-            DanoService danos, DocumentoService documentos) {
+            DanoService danos, DocumentoService documentos, RevisaoService revisoes) {
         this.odoo = odoo;
         this.localizacao = localizacao;
         this.reservas = reservas;
         this.danos = danos;
         this.documentos = documentos;
+        this.revisoes = revisoes;
     }
 
     /**
@@ -58,7 +61,8 @@ public class FrotaService {
      * @param lat              posição do cliente (opcional)
      * @param lng              posição do cliente (opcional)
      * @param raioKm           só viaturas até esta distância (opcional; exige lat/lng)
-     * @param apenasDisponiveis esconde as viaturas reservadas, em reparação ou com documentos caducados
+     * @param apenasDisponiveis esconde as viaturas reservadas, em reparação, com revisão por fazer
+     *                          ou com documentos caducados
      */
     public List<ViaturaDto> listar(Double lat, Double lng, Double raioKm, boolean apenasDisponiveis) {
         boolean comPosicao = lat != null && lng != null;
@@ -69,9 +73,11 @@ public class FrotaService {
         Set<Long> reservadas = new HashSet<>(reservas.viaturasComEstado(ATIVAS));
         Set<Long> emReparacao = danos.viaturasImobilizadas();
         Set<Long> documentosCaducados = documentos.viaturasComDocumentosCaducados();
+        Set<Long> comRevisaoAberta = revisoes.viaturasComRevisaoAberta();
 
         List<ViaturaDto> resultado = listarDoOdoo().stream()
-                .map(v -> completar(v, posicoes.get(v.id()), reservadas, emReparacao, documentosCaducados, lat, lng))
+                .map(v -> completar(v, posicoes.get(v.id()), reservadas, emReparacao, comRevisaoAberta,
+                        documentosCaducados, lat, lng))
                 .filter(v -> !apenasDisponiveis || v.disponivel())
                 .filter(v -> raioKm == null || (v.distanciaKm() != null && v.distanciaKm() <= raioKm))
                 .toList();
@@ -89,11 +95,12 @@ public class FrotaService {
         Set<Long> reservadas = new HashSet<>(reservas.viaturasComEstado(ATIVAS));
         Set<Long> emReparacao = danos.viaturasImobilizadas();
         Set<Long> documentosCaducados = documentos.viaturasComDocumentosCaducados();
+        Set<Long> comRevisaoAberta = revisoes.viaturasComRevisaoAberta();
         return odoo.searchRead(MODELO, List.of(OdooClient.condicao("id", "=", id)), CAMPOS, null).stream()
                 .findFirst()
                 .map(FrotaService::paraDto)
                 .map(v -> completar(v, localizacao.daViatura(id).orElse(null), reservadas, emReparacao,
-                        documentosCaducados, null, null));
+                        comRevisaoAberta, documentosCaducados, null, null));
     }
 
     /** Regista no Odoo a quilometragem da viatura (fleet.vehicle.odometer). */
@@ -109,7 +116,7 @@ public class FrotaService {
     }
 
     private static ViaturaDto completar(ViaturaDto v, PosicaoViatura p, Set<Long> reservadas, Set<Long> emReparacao,
-            Set<Long> documentosCaducados, Double lat, Double lng) {
+            Set<Long> comRevisaoAberta, Set<Long> documentosCaducados, Double lat, Double lng) {
         Double vLat = p != null ? p.getLatitude() : null;
         Double vLng = p != null ? p.getLongitude() : null;
         Double distancia = null;
@@ -118,6 +125,8 @@ public class FrotaService {
         }
         String motivo = reservadas.contains(v.id()) ? "Reservada"
                 : emReparacao.contains(v.id()) ? "Em reparação"
+                // Diagrama 6: chegou aos km da revisão ou tem uma ordem de revisão por concluir
+                : RevisaoService.chegouARevisao(v) || comRevisaoAberta.contains(v.id()) ? "Revisão por fazer"
                 : documentosCaducados.contains(v.id()) ? "Documentos caducados" : null;
         return v.comLocalizacao(vLat, vLng, motivo, distancia);
     }
@@ -134,6 +143,7 @@ public class FrotaService {
                 numero(r.get("entry_fee")),
                 numero(r.get("price_per_minute")),
                 numero(r.get("price_per_km")),
-                null, null, true, null, null);
+                null, null, true, null, null,
+                numero(r.get("next_service_km")));
     }
 }

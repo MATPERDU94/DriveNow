@@ -21,6 +21,7 @@ src/main/java/pt/drivenow/
 ├── reservas/      reservas e estado da viagem
 ├── relatos/       relatos de início/fim + atribuição de danos e penalizações
 ├── trajetos/      trajeto de cada viagem (serviço de rotas OSRM)
+├── revisoes/      revisões por km: carros com "Revisão por fazer" e ordens de revisão no Odoo
 └── common/        erros da API
 ```
 
@@ -156,6 +157,22 @@ entre o sítio onde o carro estava quando foi reservado e o sítio onde o client
 - Os km cobrados são sempre os do painel; a distância do trajeto serve só para mostrar o percurso (o cliente pode ter dado voltas).
 - Reservas canceladas não têm trajeto (o carro não saiu do sítio).
 
+## Revisões por km (diagrama 6)
+
+Todos os carros vão à oficina DriveNow a cada **15 000 km** (documento "Oficina, revisões e peças").
+
+- **Odoo** (módulo `drivenow_danos` 19.0.1.3.0): cada carro tem os **km da próxima revisão** (Frota → Revisões → Revisões por km,
+  a vermelho os que já passaram, a laranja os que estão a menos de 1 000 km). Ao atualizar o módulo, os carros que ainda não os
+  têm ficam com o múltiplo de 15 000 km seguinte (ex.: 12 500 km → 15 000). Há um serviço novo, **Revisão**, e a lista
+  Frota → Revisões → **Ordens de revisão**. Quando a oficina marca uma ordem como **Concluído**, o Odoo passa a próxima revisão
+  para os km atuais + 15 000.
+- **Backend**: um carro sai do mapa com o motivo **"Revisão por fazer"** quando o conta-km chega aos km da próxima revisão
+  ou quando tem uma ordem de revisão por concluir.
+- **Fim da viagem sem n8n**: depois de registar os km no Odoo, o backend vê se o carro chegou à revisão e, se ainda não houver
+  ordem aberta, cria a ordem "Revisão" (estado Novo). Com o n8n ligado, é o fluxo do n8n que trata disto (diagrama 6).
+- Para testar: `python3 scripts/revisoes.py estado` (km que faltam em cada carro), `python3 scripts/revisoes.py preparar 12-AB-34 10`
+  (a revisão desse carro fica a 10 km) e `python3 scripts/revisoes.py repor` (volta aos múltiplos de 15 000 km).
+
 ## Faturação (Moloni)
 
 No fim de cada viagem (relato de FIM), o backend emite no Moloni uma **fatura-recibo**:
@@ -189,7 +206,7 @@ Para cada dano assinalado num relato:
 - Relato de **início**: só com a reserva em `RESERVADA`; passa a `EM_CURSO`.
 - Relato de **fim**: só com a reserva em `EM_CURSO`; passa a `CONCLUIDA`, calcula os km da viagem e o preço, e a posição da viatura é atualizada com as coordenadas enviadas. A quilometragem é obrigatória e é registada no Odoo (pelo n8n ou, se o n8n não responder, pelo backend).
 - Não há hubs: cada viatura tem uma posição GPS. No primeiro arranque, as viaturas sem posição ficam distribuídas por 30 pontos de Guimarães.
-- `disponivel` é `false` enquanto a viatura estiver numa reserva ativa.
+- `disponivel` é `false` enquanto a viatura estiver numa reserva ativa, em reparação, com a revisão por fazer ou com documentos caducados.
 
 ## Próximos passos
 
