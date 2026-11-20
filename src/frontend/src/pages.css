@@ -1170,6 +1170,7 @@
 }
 .recibo__linhas dd {
   margin: 0;
+  white-space: nowrap;
   font-weight: 700;
   font-size: 17px;
   font-variant-numeric: tabular-nums;

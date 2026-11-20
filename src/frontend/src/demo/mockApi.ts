@@ -18,7 +18,7 @@ import type {
   Viatura,
 } from '../api/types';
 import { LOCAIS, distanciaKm } from '../lib/geo';
-import { euro, data, hora, semIva } from '../lib/format';
+import { euro, data, hora, semIva, kmViagem as fmtKmViagem, MAX_KM_VIAGEM } from '../lib/format';
 import { ibanOk, luhn, marcaCartao, nifValido, validadeOk } from '../lib/validacao';
 
 const CHAVE = 'drivenow.demo.v1';
@@ -58,6 +58,9 @@ const FROTA: [string, string, number, number, number, number, number][] = [
   ['70-PP-89', 'BMW/iX1', 2024, 5, 4600, 35, 0.31],
   ['92-QQ-01', 'Dacia/Spring', 2023, 4, 15300, 5, 0.14],
 ];
+
+/** Preço por km de cada modelo, igual a CSV/Odoo/4_precos.csv: acompanha a taxa de entrada. */
+const precoKmDe = (taxa: number) => (taxa <= 10 ? 0.1 : taxa <= 35 ? 0.15 : taxa <= 100 ? 0.25 : 0.4);
 
 // Tabela de danos do módulo drivenow_danos (Odoo)
 const DANOS: Omit<TipoDano, 'id'>[] = [
@@ -102,6 +105,7 @@ interface ViaturaInterna {
   km: number;
   taxa: number;
   preco: number;
+  precoKm: number;
   lat: number;
   lng: number;
   estado: 'livre' | 'reparacao' | 'documentos';
@@ -119,6 +123,9 @@ interface ReservaInterna {
   fimViagem: string | null;
   taxaEntrada: number;
   precoMinuto: number;
+  precoKm: number;
+  kmInicial: number;
+  kmFinal: number | null;
   totalPenalizacoes: number;
   estadoPagamento: Reserva['estadoPagamento'];
   pagamentoDescricao: string | null;
@@ -127,7 +134,7 @@ interface ReservaInterna {
   moloniDocumentoId: number | null;
 }
 interface Estado {
-  versao: 1;
+  versao: 2;
   seq: { u: number; r: number; rel: number; c: number; fatura: number };
   utilizadores: UtilizadorInterno[];
   viaturas: ViaturaInterna[];
@@ -153,6 +160,7 @@ function semente(): Estado {
       km,
       taxa,
       preco,
+      precoKm: precoKmDe(taxa),
       lat: p.lat,
       lng: p.lng,
       estado: 'livre',
@@ -203,6 +211,9 @@ function semente(): Estado {
     const inicioViagem = new Date(ini.getTime() + 3 * 60000).toISOString();
     const fimViagem = new Date(ini.getTime() + (min * 60 - 20) * 1000).toISOString();
     const id = i + 1;
+    // Cerca de 0,4 km por minuto em cidade; o carro já andou mais desde essa viagem.
+    const kmFeitos = Math.round(min * 0.4 * 10) / 10;
+    const kmFinal = v.km - 40 * (i + 1);
     reservas.push({
       id,
       utilizadorId: 1,
@@ -214,6 +225,9 @@ function semente(): Estado {
       fimViagem,
       taxaEntrada: v.taxa,
       precoMinuto: v.preco,
+      precoKm: v.precoKm,
+      kmInicial: kmFinal - kmFeitos,
+      kmFinal,
       totalPenalizacoes: 0,
       estadoPagamento: 'PAGO',
       pagamentoDescricao: 'Visa •••• 4242',
@@ -225,7 +239,7 @@ function semente(): Estado {
       id,
       reservaId: id,
       tipo: 'VIAGEM',
-      valor: r2(v.taxa + min * v.preco),
+      valor: r2(v.taxa + min * v.preco + kmFeitos * v.precoKm),
       estado: 'PAGA',
       meio: 'Visa •••• 4242',
       motivoRecusa: null,
@@ -236,7 +250,7 @@ function semente(): Estado {
   });
 
   return {
-    versao: 1,
+    versao: 2,
     seq: { u: 2, r: reservas.length + 1, rel: 1, c: cobrancas.length + 1, fatura: 129 },
     utilizadores: [ana],
     viaturas,
@@ -254,7 +268,7 @@ function carregar(): Estado {
     const raw = localStorage.getItem(CHAVE);
     if (raw) {
       const e = JSON.parse(raw) as Estado;
-      if (e.versao === 1) estado = e;
+      if (e.versao === 2) estado = e;
     }
   } catch {
     /* sem storage: começa do zero */
@@ -329,6 +343,7 @@ function viaturaDto(v: ViaturaInterna, ref?: { lat: number; lng: number }): Viat
     estado: v.estado === 'reparacao' ? 'Em reparação' : 'Disponível',
     taxaEntrada: v.taxa,
     precoMinuto: v.preco,
+    precoKm: v.precoKm,
     latitude: v.lat,
     longitude: v.lng,
     disponivel: motivo == null,
@@ -355,8 +370,11 @@ function reservaDto(r: ReservaInterna): Reserva {
   const u = carregar().utilizadores.find((x) => x.id === r.utilizadorId);
   const fim = r.fimViagem ?? agoraIso();
   const minutos = minutosEntre(r.criadaEm, fim);
-  const valorViagem = r2(r.taxaEntrada + minutos * r.precoMinuto);
+  const valorViagem = r2(minutos * r.precoMinuto);
   const terminada = r.estado === 'CONCLUIDA' || r.estado === 'CANCELADA';
+  // Como no backend: km da viagem = km finais - km iniciais; cancelada = 0 km.
+  const kmViagem = terminada ? (r.kmFinal == null ? 0 : Math.round(Math.max(0, r.kmFinal - r.kmInicial) * 10) / 10) : null;
+  const valorKm = kmViagem == null ? null : r2(kmViagem * r.precoKm);
   return {
     id: r.id,
     utilizadorId: r.utilizadorId,
@@ -369,12 +387,17 @@ function reservaDto(r: ReservaInterna): Reserva {
     fimViagem: r.fimViagem,
     taxaEntrada: r.taxaEntrada,
     precoMinuto: r.precoMinuto,
+    precoKm: r.precoKm,
     minutos: terminada ? minutos : null,
     valorViagem: terminada ? valorViagem : null,
+    kmInicial: r.kmInicial,
+    kmFinal: r.kmFinal,
+    kmViagem,
+    valorKm,
     totalPenalizacoes: terminada ? r.totalPenalizacoes : null,
-    total: terminada ? r2(valorViagem + r.totalPenalizacoes) : null,
+    total: terminada ? r2(r.taxaEntrada + valorViagem + (valorKm ?? 0) + r.totalPenalizacoes) : null,
     minutosDecorridos: minutos,
-    valorAteAgora: valorViagem,
+    valorAteAgora: r2(r.taxaEntrada + valorViagem),
     estadoPagamento: r.estadoPagamento,
     pagamentoDescricao: r.pagamentoDescricao,
     estadoFatura: r.estadoFatura,
@@ -622,6 +645,9 @@ function rotear(metodo: string, caminhoCompleto: string, corpo: unknown, token: 
       fimViagem: null,
       taxaEntrada: v.taxa,
       precoMinuto: v.preco,
+      precoKm: v.precoKm,
+      kmInicial: v.km,
+      kmFinal: null,
       totalPenalizacoes: 0,
       estadoPagamento: null,
       pagamentoDescricao: null,
@@ -682,8 +708,15 @@ function rotear(metodo: string, caminhoCompleto: string, corpo: unknown, token: 
       if (tipo === 'FIM') {
         if (p.latitude == null || p.longitude == null)
           throw regra('O relato de FIM tem de indicar a latitude e a longitude onde o carro ficou');
-        if (p.quilometragem != null && p.quilometragem < v.km)
-          throw regra(`A quilometragem final (${p.quilometragem}) não pode ser inferior à atual (${v.km})`);
+        const kmPainel = p.quilometragem;
+        if (kmPainel == null) throw regra('Indique os km do painel no fim da viagem');
+        if (!Number.isFinite(kmPainel) || kmPainel < 0) throw regra('Os km do painel não são válidos');
+        if (kmPainel < r.kmInicial)
+          throw regra(`Os km do painel (${kmPainel}) não podem ser inferiores aos km no início da viagem (${r.kmInicial})`);
+        if (kmPainel - r.kmInicial > MAX_KM_VIAGEM)
+          throw regra(
+            `Com ${kmPainel} km no painel, a viagem teria ${Math.round((kmPainel - r.kmInicial) * 10) / 10} km (máximo ${MAX_KM_VIAGEM} km). Confirme os km do painel`,
+          );
       }
       if (e.relatos.some((x) => x.reservaId === r.id && x.tipo === tipo)) throw regra(`Esta reserva já tem um relato de ${tipo}`);
 
@@ -750,7 +783,8 @@ function rotear(metodo: string, caminhoCompleto: string, corpo: unknown, token: 
         r.totalPenalizacoes = r2(acumulado);
         v.lat = p.latitude!;
         v.lng = p.longitude!;
-        if (p.quilometragem != null) v.km = Math.round(p.quilometragem);
+        r.kmFinal = p.quilometragem!;
+        v.km = Math.round(p.quilometragem!);
         cobrar(r, reservaDto(r).total ?? 0);
       }
       gravar();
@@ -789,6 +823,7 @@ export function abrirFaturaDemo(r: Reserva, modelo: string, email?: string) {
   const linhas = [
     [`Taxa de entrada (${modelo} · ${r.matricula})`, r.taxaEntrada],
     [`Utilização: ${r.minutos ?? r.minutosDecorridos} min × ${euro(r.precoMinuto)}`, r2((r.minutos ?? r.minutosDecorridos) * r.precoMinuto)],
+    ...(r.valorKm ? [[`Km percorridos: ${fmtKmViagem(r.kmViagem)} × ${euro(r.precoKm)}`, r.valorKm] as [string, number]] : []),
     ...(r.totalPenalizacoes ? [['Penalizações por danos', r.totalPenalizacoes] as [string, number]] : []),
   ] as [string, number][];
   const html = `<!doctype html><html lang="pt-PT"><head><meta charset="utf-8"><title>Fatura-recibo FR ${r.moloniDocumentoId}</title>

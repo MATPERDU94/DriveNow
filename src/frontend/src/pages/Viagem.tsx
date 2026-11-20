@@ -9,7 +9,7 @@ import { useToast } from '../state/toast';
 import { AjustarTamanho, Mosaico, iconeCarro, iconeEu } from '../components/mapa';
 import { EstadoCarroModal } from '../components/EstadoCarroModal';
 import { Botao, Carregar, Modal } from '../components/ui';
-import { cronometro, distancia, euro, km, minutosAPe, minutosCobrados, nomeModelo, porMinuto } from '../lib/format';
+import { cronometro, distancia, euro, km, minutosAPe, minutosCobrados, nomeModelo, porKm, porMinuto } from '../lib/format';
 import { distanciaKm, moradaAproximada, usePosicao, type Ponto } from '../lib/geo';
 import { useSegundosDesde, useTitulo } from '../lib/hooks';
 
@@ -120,12 +120,13 @@ export default function Viagem() {
               <CalendarDays size={16} /> {viatura.ano}
             </li>
           ) : null}
-          {viatura?.quilometragem != null ? (
+          {(ativa.kmInicial ?? viatura?.quilometragem) != null ? (
             <li>
-              <Gauge size={16} /> {km(viatura.quilometragem)}
+              <Gauge size={16} /> {km(ativa.kmInicial ?? viatura?.quilometragem)}
             </li>
           ) : null}
           <li>Taxa de entrada {euro(ativa.taxaEntrada)}</li>
+          <li>{porKm(ativa.precoKm)}</li>
         </ul>
 
         <div className="viagem__tiles">
@@ -140,6 +141,8 @@ export default function Viagem() {
             </div>
             <div className="viagem__det">
               {euro(ativa.taxaEntrada)} de entrada + {minutos} min × {porMinuto(ativa.precoMinuto)}
+              <br />
+              Os km somam-se no fim ({porKm(ativa.precoKm)})
             </div>
           </div>
         </div>
@@ -215,6 +218,7 @@ export default function Viagem() {
           {emCurso ? (
             <ul>
               <li>Estacione numa zona permitida</li>
+              <li>Veja os km no painel: vai precisar deles</li>
               <li>Feche portas e janelas</li>
               <li>O valor é debitado automaticamente</li>
             </ul>
@@ -269,7 +273,7 @@ export default function Viagem() {
         >
           <p style={{ color: 'var(--muted)' }}>
             O carro volta a ficar livre para outros clientes. Paga a taxa de entrada e os minutos em que o carro esteve
-            guardado para si.
+            guardado para si (sem km, porque o carro não saiu do sítio).
           </p>
           <div className="estimativa" style={{ marginTop: 18 }}>
             <div>

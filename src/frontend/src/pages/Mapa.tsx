@@ -10,7 +10,7 @@ import { AjustarTamanho, Centrar, Mosaico, iconeEu, iconePonto, iconePreco } fro
 import { Botao, Spinner } from '../components/ui';
 import { ConfirmarReserva } from '../components/ConfirmarReserva';
 import { LOCAIS, distanciaKm, usePosicao, type Ponto } from '../lib/geo';
-import { distancia, euro, minutosAPe, nomeModelo, porMinuto } from '../lib/format';
+import { distancia, euro, minutosAPe, nomeModelo, porKm, porMinuto } from '../lib/format';
 import { useIntervalo, useTitulo } from '../lib/hooks';
 
 const normalizar = (s: string) =>
@@ -354,7 +354,7 @@ export default function Mapa() {
               <div className="tile-navy">
                 <div className="tile-navy__rot">Preço</div>
                 <div className="tile-navy__val tile-navy__val--sky">{porMinuto(sel.precoMinuto)}</div>
-                <div className="tile-navy__extra">IVA incl.</div>
+                <div className="tile-navy__extra">+ {porKm(sel.precoKm)} · IVA incl.</div>
               </div>
             </div>
 

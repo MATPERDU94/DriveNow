@@ -17,6 +17,9 @@ export const euro = (v: number | null | undefined) => euroFmt.format(v ?? 0);
 /** 0,32 €/min */
 export const porMinuto = (v: number | null | undefined) => `${num2.format(v ?? 0)} €/min`;
 
+/** 0,15 €/km */
+export const porKm = (v: number | null | undefined) => `${num2.format(v ?? 0)} €/km`;
+
 /** 320 m · 1,2 km */
 export function distancia(km: number | null | undefined): string {
   if (km == null) return '—';
@@ -28,6 +31,13 @@ export function distancia(km: number | null | undefined): string {
 export const minutosAPe = (km: number) => Math.max(1, Math.round((km * 1000) / 80));
 
 export const km = (v: number | null | undefined) => (v == null ? '—' : `${inteiro.format(v)} km`);
+
+/** Km de uma viagem, com uma casa decimal se for preciso: 12 km · 12,3 km */
+export const kmViagem = (v: number | null | undefined) =>
+  v == null ? '—' : `${new Intl.NumberFormat('pt-PT', { maximumFractionDigits: 1 }).format(v)} km`;
+
+/** Máximo de km numa viagem (o mesmo do backend): mais do que isto é um engano ao escrever os km do painel. */
+export const MAX_KM_VIAGEM = 1000;
 
 /** 4 nov 2026 */
 export function data(iso: string | null | undefined): string {
@@ -79,5 +89,5 @@ export const minutosCobrados = (segundos: number) => Math.max(1, Math.ceil(segun
 /** Valor sem IVA a partir de um preço com IVA a 23%. */
 export const semIva = (total: number) => Math.round((total / 1.23) * 100) / 100;
 
-/** Total da viagem (taxa + minutos + penalizações); enquanto decorre, o valor até agora. */
+/** Total da viagem (taxa + minutos + km + penalizações); enquanto decorre, o valor até agora (sem os km). */
 export const totalDe = (r: Reserva) => r.total ?? r.valorAteAgora ?? 0;

@@ -6,7 +6,7 @@ import type { Relato, Reserva, Viatura } from '../api/types';
 import { useSessao } from '../state/sessao';
 import { useToast } from '../state/toast';
 import { Botao, Carregar, Spinner } from '../components/ui';
-import { data, duracao, euro, hora, nomeModelo, semIva, totalDe } from '../lib/format';
+import { data, duracao, euro, hora, km, kmViagem, nomeModelo, porKm, porMinuto, semIva, totalDe } from '../lib/format';
 import { useIntervalo, useTitulo } from '../lib/hooks';
 
 export default function Resumo() {
@@ -66,6 +66,9 @@ export default function Resumo() {
   const iva = Math.round((total - base) * 100) / 100;
   const modelo = viatura ? nomeModelo(viatura.modelo) : 'Carro';
   const danos = relatos.flatMap((rel) => rel.danos.map((d) => ({ ...d, momento: rel.tipo })));
+  const minutos = r.minutos ?? r.minutosDecorridos;
+  // Viagens feitas antes do preço por km não têm km guardados
+  const comKm = !cancelada && r.kmViagem != null && r.precoKm != null;
 
   async function tentarFaturar() {
     setAFaturar(true);
@@ -110,16 +113,35 @@ export default function Resumo() {
         <dl className="recibo__linhas">
           <div>
             <dt>Duração</dt>
-            <dd>{duracao(r.minutos ?? r.minutosDecorridos)}</dd>
+            <dd>{duracao(minutos)}</dd>
           </div>
+          {comKm ? (
+            <div>
+              <dt>
+                Distância
+                {r.kmInicial != null && r.kmFinal != null ? ` (painel: ${km(r.kmInicial)} → ${km(r.kmFinal)})` : ''}
+              </dt>
+              <dd>{kmViagem(r.kmViagem)}</dd>
+            </div>
+          ) : null}
           <div>
             <dt>Taxa de entrada</dt>
             <dd>{euro(r.taxaEntrada)}</dd>
           </div>
           <div>
-            <dt>Preço por minuto</dt>
-            <dd>{euro(r.precoMinuto)}</dd>
+            <dt>
+              Tempo ({minutos} min × {porMinuto(r.precoMinuto)})
+            </dt>
+            <dd>{euro(r.valorViagem ?? minutos * r.precoMinuto)}</dd>
           </div>
+          {comKm ? (
+            <div>
+              <dt>
+                Km ({kmViagem(r.kmViagem)} × {porKm(r.precoKm)})
+              </dt>
+              <dd>{euro(r.valorKm)}</dd>
+            </div>
+          ) : null}
           {r.totalPenalizacoes ? (
             <div>
               <dt>Penalizações por danos</dt>

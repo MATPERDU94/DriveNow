@@ -7,7 +7,7 @@ import { api, type ApiError } from '../api/client';
 import type { Relato, Reserva, TipoDano, Viatura } from '../api/types';
 import { AjustarTamanho, AoClicar, Centrar, Mosaico, iconeCarro } from './mapa';
 import { Botao, Campo, Modal, Spinner } from './ui';
-import { euro, km as fmtKm } from '../lib/format';
+import { MAX_KM_VIAGEM, euro, km as fmtKm, kmViagem as fmtKmViagem, porKm } from '../lib/format';
 import { GUIMARAES, moradaAproximada, type Ponto } from '../lib/geo';
 
 let cacheTipos: TipoDano[] | null = null;
@@ -41,8 +41,9 @@ export function EstadoCarroModal({
   const [comDanos, setComDanos] = useState(false);
   const [danos, setDanos] = useState<Record<number, string>>({});
   const [obs, setObs] = useState('');
-  const kmAtual = viatura?.quilometragem ?? null;
-  const [kmFinal, setKmFinal] = useState(kmAtual != null ? String(Math.ceil(kmAtual)) : '');
+  // Km no momento da reserva (guardados pelo backend); em reservas antigas, os km atuais do carro.
+  const kmInicio = reserva.kmInicial ?? viatura?.quilometragem ?? null;
+  const [kmFinal, setKmFinal] = useState('');
   const posCarro: Ponto | null =
     viatura?.latitude != null && viatura?.longitude != null ? { lat: viatura.latitude, lng: viatura.longitude } : null;
   const [local, setLocal] = useState<Ponto | null>(posicaoGps ?? posCarro ?? GUIMARAES);
@@ -78,10 +79,19 @@ export function EstadoCarroModal({
   );
   const imobiliza = escolhidos.some((t) => t.imobilizaCarro);
   const kmNum = kmFinal.trim() === '' ? null : Number(kmFinal.replace(',', '.'));
-  const erroKm =
-    fim && kmNum != null && (Number.isNaN(kmNum) || (kmAtual != null && kmNum < kmAtual))
-      ? `Não pode ser inferior à atual (${fmtKm(kmAtual)})`
-      : null;
+  const erroKm = !fim || kmNum == null
+    ? null
+    : Number.isNaN(kmNum)
+      ? 'Escreva só o número de km'
+      : kmInicio != null && kmNum < kmInicio
+        ? `Não pode ser inferior aos km do início (${fmtKm(kmInicio)})`
+        : kmInicio != null && kmNum - kmInicio > MAX_KM_VIAGEM
+          ? `Seriam mais de ${fmtKm(MAX_KM_VIAGEM)} numa viagem. Confirme os km do painel`
+          : null;
+  // Km da viagem e quanto custam, enquanto o cliente escreve
+  const kmDaViagem =
+    fim && kmNum != null && !erroKm && kmInicio != null ? Math.round((kmNum - kmInicio) * 10) / 10 : null;
+  const valorKm = kmDaViagem != null ? Math.round(kmDaViagem * (reserva.precoKm ?? 0) * 100) / 100 : 0;
 
   function alternar(t: TipoDano) {
     setDanos((d) => {
@@ -96,6 +106,10 @@ export function EstadoCarroModal({
     setErro(null);
     if (comDanos && escolhidos.length === 0) {
       setErro('Escolha pelo menos um tipo de dano, ou indique que o carro está sem danos.');
+      return;
+    }
+    if (fim && kmNum == null) {
+      setErro('Indique os km que aparecem no painel do carro.');
       return;
     }
     if (fim && !local) {
@@ -116,7 +130,7 @@ export function EstadoCarroModal({
           ? {
               latitude: Number(local!.lat.toFixed(6)),
               longitude: Number(local!.lng.toFixed(6)),
-              quilometragem: kmNum ?? undefined,
+              quilometragem: kmNum!,
             }
           : {}),
       });
@@ -237,9 +251,18 @@ export function EstadoCarroModal({
               rotulo="Quilómetros no painel"
               inputMode="numeric"
               value={kmFinal}
-              onChange={(e) => setKmFinal(e.target.value.replace(/[^\d.,]/g, ''))}
+              onChange={(e) => {
+                setKmFinal(e.target.value.replace(/[^\d.,]/g, ''));
+                setErro(null);
+              }}
               erro={erroKm}
-              ajuda={kmAtual != null ? `No início da viagem: ${fmtKm(kmAtual)}` : 'Opcional'}
+              ajuda={
+                kmDaViagem != null
+                  ? `Viagem de ${fmtKmViagem(kmDaViagem)} (no início: ${fmtKm(kmInicio)})`
+                  : kmInicio != null
+                    ? `No início da viagem: ${fmtKm(kmInicio)}`
+                    : undefined
+              }
             />
             <div className="campo" style={{ marginTop: 18 }}>
               <label className="campo__rot" htmlFor="obs-fim">
@@ -309,8 +332,14 @@ export function EstadoCarroModal({
       {fim ? (
         <div className="estimativa">
           <div>
-            <span>Viagem até agora</span>
+            <span>Taxa e tempo até agora</span>
             <b className="tabular">{euro(valorAteAgora)}</b>
+          </div>
+          <div>
+            <span>
+              {kmDaViagem != null ? `${fmtKmViagem(kmDaViagem)} × ${porKm(reserva.precoKm)}` : `Km da viagem (${porKm(reserva.precoKm)})`}
+            </span>
+            <b className="tabular">{kmDaViagem != null ? euro(valorKm) : '—'}</b>
           </div>
           {penalizacao > 0 ? (
             <div>
@@ -320,7 +349,7 @@ export function EstadoCarroModal({
           ) : null}
           <div className="estimativa__total">
             <span>Total estimado</span>
-            <b className="tabular">{euro(valorAteAgora + penalizacao)}</b>
+            <b className="tabular">{euro(valorAteAgora + valorKm + penalizacao)}</b>
           </div>
           <p>
             <Info size={14} /> Debitado automaticamente em {utilizador?.meioPagamento?.descricao ?? 'no seu meio de pagamento'}. Danos

@@ -5,7 +5,7 @@ import { abrirFatura, api, type ApiError } from '../api/client';
 import type { Reserva } from '../api/types';
 import { useSessao } from '../state/sessao';
 import { Carregar } from '../components/ui';
-import { data, duracao, euro, nomeModelo, totalDe } from '../lib/format';
+import { data, duracao, euro, kmViagem, nomeModelo, totalDe } from '../lib/format';
 import { useIntervalo, useTitulo } from '../lib/hooks';
 
 const TRINTA_DIAS = 30 * 24 * 3600 * 1000;
@@ -128,7 +128,7 @@ export default function Viagens() {
               <tr>
                 <th>Data</th>
                 <th>Carro</th>
-                <th>Duração</th>
+                <th>Duração e km</th>
                 <th className="dir">Valor</th>
                 <th>Fatura</th>
                 <th aria-label="Ações" />
@@ -147,7 +147,10 @@ export default function Viagens() {
                       {r.estado === 'CANCELADA' ? <span className="chip chip--cinza chip--mini">Cancelada</span> : null}
                       {r.estadoPagamento === 'EM_DIVIDA' ? <span className="chip chip--perigo chip--mini">Em dívida</span> : null}
                     </td>
-                    <td data-rot="Duração">{duracao(r.minutos ?? r.minutosDecorridos)}</td>
+                    <td data-rot="Duração e km">
+                      {duracao(r.minutos ?? r.minutosDecorridos)}
+                      {r.kmViagem ? ` · ${kmViagem(r.kmViagem)}` : ''}
+                    </td>
                     <td className="dir forte tabular" data-rot="Valor">
                       {euro(totalDe(r))}
                     </td>

@@ -2,11 +2,12 @@ import { Link } from 'react-router-dom';
 import { AlertTriangle, CalendarDays, Footprints, Gauge, MapPin, Timer, Users, Zap } from 'lucide-react';
 import type { Viatura } from '../api/types';
 import { Botao, Modal } from './ui';
-import { distancia, euro, km, minutosAPe, nomeModelo, porMinuto } from '../lib/format';
+import { distancia, euro, km, minutosAPe, nomeModelo, porKm, porMinuto } from '../lib/format';
 import { moradaAproximada } from '../lib/geo';
 
-/** Minutos usados no exemplo de preço (o mesmo exemplo do documento de funcionamento). */
+/** Viagem usada no exemplo de preço. */
 const MINUTOS_EXEMPLO = 30;
+const KM_EXEMPLO = 10;
 
 /**
  * Confirmação antes de reservar: o temporizador começa no momento da reserva,
@@ -27,7 +28,8 @@ export function ConfirmarReserva({
   aoFechar: () => void;
   aoConfirmar: () => void;
 }) {
-  const exemplo = v.taxaEntrada + MINUTOS_EXEMPLO * v.precoMinuto;
+  const precoKm = v.precoKm ?? 0;
+  const exemplo = v.taxaEntrada + MINUTOS_EXEMPLO * v.precoMinuto + KM_EXEMPLO * precoKm;
   const local = v.latitude != null && v.longitude != null ? moradaAproximada({ lat: v.latitude, lng: v.longitude }) : null;
 
   return (
@@ -104,8 +106,14 @@ export function ConfirmarReserva({
           <span>Preço por minuto</span>
           <b className="tabular">{porMinuto(v.precoMinuto)}</b>
         </div>
+        <div>
+          <span>Preço por km</span>
+          <b className="tabular">{porKm(precoKm)}</b>
+        </div>
         <div className="estimativa__total">
-          <span>Exemplo: viagem de {MINUTOS_EXEMPLO} min</span>
+          <span>
+            Exemplo: {MINUTOS_EXEMPLO} min e {KM_EXEMPLO} km
+          </span>
           <b className="tabular">{euro(exemplo)}</b>
         </div>
         <p>
@@ -117,7 +125,8 @@ export function ConfirmarReserva({
         <Timer size={18} />
         <span>
           Ao confirmar, o carro fica guardado para si e <strong>o tempo começa a contar logo</strong>, mesmo antes de iniciar a
-          viagem. Se cancelar antes de começar, paga a taxa de entrada e os minutos até cancelar.
+          viagem. Se cancelar antes de começar, paga a taxa de entrada e os minutos até cancelar. No fim da viagem indica os
+          km do painel e paga também os km percorridos.
         </span>
       </div>
 

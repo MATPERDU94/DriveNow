@@ -3,7 +3,7 @@
 Frontend da DriveNow, feito a partir dos mockups (`doc/Mockups`) e ligado à API do backend Spring Boot (`src/backend`).
 Tem os ecrãs todos do percurso do cliente: entrar, criar conta, mapa, reserva, viagem, viagem terminada, viagens e faturas e perfil.
 
-Tecnologia: Vite + React 18 + TypeScript, React Router, Leaflet (mapa OpenStreetMap/CARTO) e lucide-react (ícones).
+Tecnologia: Vite + React 18 + TypeScript, React Router, Leaflet (mapa OpenStreetMap) e lucide-react (ícones).
 
 ## Arrancar
 
@@ -35,7 +35,7 @@ npm run demo
 ```
 
 A API é simulada no próprio browser, com as mesmas regras e mensagens do backend (uma reserva de cada vez, dívidas,
-cancelamento, danos no início e no fim, franquia de 1000 €, quilometragem, pagamento e fatura). Serve para testar o
+cancelamento, danos no início e no fim, franquia de 1000 €, km da viagem e preço por km, pagamento e fatura). Serve para testar o
 frontend e como plano B numa apresentação. O botão **Demo** (canto do ecrã) repõe os dados de exemplo.
 
 | Conta de exemplo | Password |
@@ -78,9 +78,15 @@ Os erros do backend (ProblemDetail) aparecem tal como vêm, por exemplo "Já tem
 
 ## Regras visíveis na app
 
-- O temporizador começa na reserva; cada minuto começado conta inteiro; valor = taxa de entrada + minutos × preço/min (IVA incluído).
+- O temporizador começa na reserva; cada minuto começado conta inteiro.
+- Valor = taxa de entrada + minutos × preço/min + km × preço/km + penalizações (IVA incluído). O preço/km vem do Tarifário do Odoo e
+  aparece no mapa e na confirmação da reserva (com um exemplo de 30 min e 10 km).
+- Durante a viagem, o "valor até agora" ainda não tem os km: somam-se no fim.
 - Antes de começar a viagem, o cliente indica o estado do carro ("sem danos" ou os danos encontrados). Esses danos são cobrados ao condutor anterior.
-- Para terminar: estado do carro, quilómetros do painel (não podem ser inferiores aos atuais) e onde deixou o carro (GPS ou toque no mapa).
+- Para terminar: estado do carro, quilómetros do painel (obrigatórios; não podem ser inferiores aos do início da viagem nem dar mais de
+  1000 km) e onde deixou o carro (GPS ou toque no mapa). Ao escrever os km, a app mostra os km da viagem e quanto custam.
+- O resumo da viagem mostra a distância (km do painel no início e no fim), o tempo, os km e o total; a lista de viagens mostra os km.
+- Cancelar a reserva não conta km (o carro não saiu do sítio).
 - Pagamento recusado → dívida: não pode reservar até mudar o meio de pagamento no perfil (a dívida é cobrada logo a seguir).
 - A fatura aparece como "Pendente" até o sistema de faturação responder; o ecrã vai-se atualizando sozinho.
 
@@ -92,7 +98,7 @@ Copiar `.env.example` para `.env`:
 |---|---|
 | `API_URL` | Backend usado pelo proxy do `npm run dev` (por omissão `http://localhost:8080`) |
 | `VITE_API_URL` | Endereço completo da API quando o frontend é servido noutro sítio (ex.: túnel do Cloudflare) |
-| `VITE_TILES_URL` | Outro servidor de mapas (por omissão CARTO Voyager, dados OpenStreetMap) |
+| `VITE_TILES_URL` | Outro servidor de mapas (por omissão OpenStreetMap) |
 
 ## Build
 

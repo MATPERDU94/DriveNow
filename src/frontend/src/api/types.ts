@@ -58,6 +58,7 @@ export interface Viatura {
   estado: string | null;
   taxaEntrada: number;
   precoMinuto: number;
+  precoKm: number | null;
   latitude: number | null;
   longitude: number | null;
   disponivel: boolean;
@@ -81,8 +82,18 @@ export interface Reserva {
   fimViagem: string | null;
   taxaEntrada: number;
   precoMinuto: number;
+  precoKm: number | null;
   minutos: number | null;
+  /** minutos × preço por minuto */
   valorViagem: number | null;
+  /** km do carro no momento da reserva */
+  kmInicial: number | null;
+  /** km do painel indicados no fim da viagem */
+  kmFinal: number | null;
+  /** km finais - km iniciais (0 se a reserva foi cancelada) */
+  kmViagem: number | null;
+  /** km da viagem × preço por km */
+  valorKm: number | null;
   totalPenalizacoes: number | null;
   total: number | null;
   minutosDecorridos: number;
