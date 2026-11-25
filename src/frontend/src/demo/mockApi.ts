@@ -26,7 +26,7 @@ const CHAVE = 'drivenow.demo.v1';
 const CARTAO_RECUSA = '4000000000000002';
 const FRANQUIA = 1000;
 
-// Matrícula, modelo (como vem do Odoo), ano, lugares, km, taxa de entrada, preço/min — CSV/Odoo do repositório
+// Matrícula, modelo (como vem do Odoo), ano, lugares, km, taxa de entrada, preço/min - CSV/Odoo do repositório
 const FROTA: [string, string, number, number, number, number, number][] = [
   ['12-AB-34', 'Tesla/Model 3', 2023, 5, 12500, 35, 0.3],
   ['56-CD-78', 'Tesla/Model Y', 2023, 5, 9800, 35, 0.33],
@@ -191,7 +191,7 @@ function semente(): Estado {
       marca: 'Visa',
       ultimosDigitos: '4242',
       validade: '08/28',
-      descricao: 'Visa •••• 4242',
+      descricao: 'Visa **** 4242',
       expirado: false,
       recusa: false,
     },
@@ -242,7 +242,7 @@ function semente(): Estado {
       lngFinal: para.lng,
       totalPenalizacoes: 0,
       estadoPagamento: 'PAGO',
-      pagamentoDescricao: 'Visa •••• 4242',
+      pagamentoDescricao: 'Visa **** 4242',
       estadoFatura: fat ? 'EMITIDA' : 'PENDENTE',
       faturaPrevistaEm: fat ? null : Date.now() + 365 * 86400000,
       moloniDocumentoId: fat,
@@ -253,7 +253,7 @@ function semente(): Estado {
       tipo: 'VIAGEM',
       valor: r2(v.taxa + min * v.preco + kmFeitos * v.precoKm),
       estado: 'PAGA',
-      meio: 'Visa •••• 4242',
+      meio: 'Visa **** 4242',
       motivoRecusa: null,
       tentativas: 1,
       criadaEm: fimViagem,
@@ -482,7 +482,7 @@ function construirMeio(p: PedidoMeioPagamento | undefined): MeioInterno {
       marca,
       ultimosDigitos: ult,
       validade: p.validade,
-      descricao: `${marca} •••• ${ult}`,
+      descricao: `${marca} **** ${ult}`,
       expirado: false,
       recusa: numero === CARTAO_RECUSA,
     };
@@ -496,7 +496,7 @@ function construirMeio(p: PedidoMeioPagamento | undefined): MeioInterno {
     marca: 'IBAN',
     ultimosDigitos: ult,
     validade: null,
-    descricao: `IBAN •••• ${ult}`,
+    descricao: `IBAN **** ${ult}`,
     expirado: false,
     recusa: false,
   };
@@ -872,9 +872,9 @@ export function abrirFaturaDemo(r: Reserva, modelo: string, email?: string) {
   const iva = r2(total - base);
   const u = carregar().utilizadores.find((x) => x.id === r.utilizadorId);
   const linhas = [
-    [`Taxa de entrada (${modelo} · ${r.matricula})`, r.taxaEntrada],
-    [`Utilização: ${r.minutos ?? r.minutosDecorridos} min × ${euro(r.precoMinuto)}`, r2((r.minutos ?? r.minutosDecorridos) * r.precoMinuto)],
-    ...(r.valorKm ? [[`Km percorridos: ${fmtKmViagem(r.kmViagem)} × ${euro(r.precoKm)}`, r.valorKm] as [string, number]] : []),
+    [`Taxa de entrada (${modelo} | ${r.matricula})`, r.taxaEntrada],
+    [`Utilização: ${r.minutos ?? r.minutosDecorridos} min x ${euro(r.precoMinuto)}`, r2((r.minutos ?? r.minutosDecorridos) * r.precoMinuto)],
+    ...(r.valorKm ? [[`Km percorridos: ${fmtKmViagem(r.kmViagem)} x ${euro(r.precoKm)}`, r.valorKm] as [string, number]] : []),
     ...(r.totalPenalizacoes ? [['Penalizações por danos', r.totalPenalizacoes] as [string, number]] : []),
   ] as [string, number][];
   const html = `<!doctype html><html lang="pt-PT"><head><meta charset="utf-8"><title>Fatura-recibo FR ${r.moloniDocumentoId}</title>
@@ -883,15 +883,15 @@ export function abrirFaturaDemo(r: Reserva, modelo: string, email?: string) {
 .muted{color:#5b667a;font-size:14px}table{width:100%;border-collapse:collapse;margin-top:16px}td,th{padding:10px 0;border-bottom:1px solid #e3e8ef;text-align:left}
 td:last-child,th:last-child{text-align:right}.tot td{font-weight:800;font-size:18px;border:0}.demo{margin-top:28px;padding:12px 14px;background:#fdf1d2;color:#7a5600;border-radius:10px;font-size:14px}
 @media print{.demo{display:none}}</style></head><body>
-<div class="top"><div><h1>DriveNow</h1><div class="muted">Carros elétricos partilhados · Guimarães</div></div>
-<div style="text-align:right"><b>Fatura-recibo FR 2026/${r.moloniDocumentoId}</b><div class="muted">${data(r.fimViagem)} · ${hora(r.fimViagem)}</div></div></div>
-<p><b>${u?.nome ?? r.utilizadorNome}</b><br><span class="muted">NIF ${u?.nif ?? '—'} · ${email ?? u?.email ?? ''}</span></p>
+<div class="top"><div><h1>DriveNow</h1><div class="muted">Carros elétricos partilhados | Guimarães</div></div>
+<div style="text-align:right"><b>Fatura-recibo FR 2026/${r.moloniDocumentoId}</b><div class="muted">${data(r.fimViagem)} | ${hora(r.fimViagem)}</div></div></div>
+<p><b>${u?.nome ?? r.utilizadorNome}</b><br><span class="muted">NIF ${u?.nif ?? '-'} | ${email ?? u?.email ?? ''}</span></p>
 <table><thead><tr><th>Descrição</th><th>Valor (IVA incl.)</th></tr></thead><tbody>
 ${linhas.map(([d, v]) => `<tr><td>${d}</td><td>${euro(v)}</td></tr>`).join('')}
 <tr><td class="muted">Valor sem IVA</td><td class="muted">${euro(base)}</td></tr>
 <tr><td class="muted">IVA (23%)</td><td class="muted">${euro(iva)}</td></tr>
 <tr class="tot"><td>Total pago</td><td>${euro(total)}</td></tr></tbody></table>
-<p class="muted">Pago com ${r.pagamentoDescricao ?? '—'}.</p>
+<p class="muted">Pago com ${r.pagamentoDescricao ?? '-'}.</p>
 <div class="demo">Documento de demonstração, sem validade fiscal. Na app real, a fatura-recibo é emitida pelo Moloni.</div>
 </body></html>`;
   const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));

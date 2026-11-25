@@ -53,7 +53,7 @@ export function ConfirmarReserva({
           <div style={{ minWidth: 0 }}>
             <p className="ficha__modelo">{nomeModelo(v.modelo)}</p>
             <p className="ficha__sub">
-              <Zap size={15} /> Elétrico · <span className="matricula">{v.matricula}</span>
+              <Zap size={15} /> Elétrico | <span className="matricula">{v.matricula}</span>
             </p>
           </div>
           <span className="chip-navy ficha__preco">{porMinuto(v.precoMinuto)}</span>
@@ -63,7 +63,7 @@ export function ConfirmarReserva({
             <MapPin size={16} /> {local}
             {v.distanciaKm != null ? (
               <span className="ficha__pe">
-                <Footprints size={15} /> {distancia(v.distanciaKm)} · {minutosAPe(v.distanciaKm)} min a pé
+                <Footprints size={15} /> {distancia(v.distanciaKm)} | {minutosAPe(v.distanciaKm)} min a pé
               </span>
             ) : null}
           </p>
@@ -75,13 +75,13 @@ export function ConfirmarReserva({
           <dt>
             <Users size={16} /> Lugares
           </dt>
-          <dd>{v.lugares ?? '—'}</dd>
+          <dd>{v.lugares ?? '-'}</dd>
         </div>
         <div>
           <dt>
             <CalendarDays size={16} /> Ano
           </dt>
-          <dd>{v.ano ?? '—'}</dd>
+          <dd>{v.ano ?? '-'}</dd>
         </div>
         <div>
           <dt>

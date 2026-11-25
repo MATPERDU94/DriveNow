@@ -33,7 +33,7 @@ function PinCarro({ v, sel, compacto, aoClicar }: { v: Viatura; sel: boolean; co
       zIndexOffset={sel ? 1000 : compacto ? -100 : 0}
       eventHandlers={{ click: aoClicar }}
       keyboard
-      title={`${nomeModelo(v.modelo)} · ${v.matricula} · ${porMinuto(v.precoMinuto)}`}
+      title={`${nomeModelo(v.modelo)} | ${v.matricula} | ${porMinuto(v.precoMinuto)}`}
     />
   );
 }
@@ -265,8 +265,8 @@ export default function Mapa() {
                     <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => escolherSugestao(s)}>
                       {s.tipo === 'local' ? <MapPin size={18} /> : <Car size={18} />}
                       <span>
-                        {s.tipo === 'local' ? s.nome : `${nomeModelo(s.v.modelo)} · ${s.v.matricula}`}
-                        <small>{s.tipo === 'local' ? 'Guimarães' : `${distancia(s.v.distanciaKm)} · ${porMinuto(s.v.precoMinuto)}`}</small>
+                        {s.tipo === 'local' ? s.nome : `${nomeModelo(s.v.modelo)} | ${s.v.matricula}`}
+                        <small>{s.tipo === 'local' ? 'Guimarães' : `${distancia(s.v.distanciaKm)} | ${porMinuto(s.v.precoMinuto)}`}</small>
                       </span>
                     </button>
                   </li>
@@ -277,7 +277,7 @@ export default function Mapa() {
           <div className="chip-mapa" aria-live="polite">
             <span className="chip-mapa__ponto" />
             {viaturas === null ? (
-              'A procurar carros…'
+              'A procurar carros...'
             ) : (
               <>
                 <b>{perto}</b> {perto === 1 ? 'carro' : 'carros'} num raio de 1 km
@@ -330,8 +330,8 @@ export default function Mapa() {
                 <span className="etiqueta-sec">Carro selecionado</span>
                 <h2 className="selecionado__modelo">{nomeModelo(sel.modelo)}</h2>
                 <p className="selecionado__sub">
-                  Elétrico · {sel.matricula}
-                  {sel.ano ? ` · ${sel.ano}` : ''}
+                  Elétrico | {sel.matricula}
+                  {sel.ano ? ` | ${sel.ano}` : ''}
                 </p>
               </div>
               {sel.lugares ? (
@@ -351,10 +351,14 @@ export default function Mapa() {
                 <div className="tile-navy__val">{euro(sel.taxaEntrada)}</div>
                 <div className="tile-navy__extra">por viagem</div>
               </div>
-              <div className="tile-navy">
-                <div className="tile-navy__rot">Preço</div>
-                <div className="tile-navy__val tile-navy__val--sky">{porMinuto(sel.precoMinuto)}</div>
-                <div className="tile-navy__extra">+ {porKm(sel.precoKm)} · IVA incl.</div>
+              <div className="tile-navy tile-navy--preco">
+                <div className="tile-navy__rot">Preço da viagem</div>
+                <div className="tile-navy__val tile-navy__val--sky tile-navy__precos">
+                  <span>{porMinuto(sel.precoMinuto)}</span>
+                  <span className="tile-navy__mais">+</span>
+                  <span>{porKm(sel.precoKm)}</span>
+                </div>
+                <div className="tile-navy__extra">IVA incluído</div>
               </div>
             </div>
 
@@ -382,7 +386,7 @@ export default function Mapa() {
         ) : (
           <div className="cartao-navy selecionado selecionado--vazio">
             <span className="etiqueta-sec">Carro selecionado</span>
-            <p>{viaturas === null ? 'A procurar carros perto de si…' : 'Escolha um carro no mapa ou na lista.'}</p>
+            <p>{viaturas === null ? 'A procurar carros perto de si...' : 'Escolha um carro no mapa ou na lista.'}</p>
           </div>
         )}
 
@@ -439,10 +443,13 @@ export default function Mapa() {
                 <span className="item-carro__txt">
                   <span className="item-carro__nome">{nomeModelo(v.modelo)}</span>
                   <span className="item-carro__sub">
-                    <Zap size={13} /> Elétrico · {distancia(v.distanciaKm)} · {v.matricula}
+                    <Zap size={13} /> Elétrico | {distancia(v.distanciaKm)} | {v.matricula}
                   </span>
                 </span>
-                <span className="item-carro__preco">{porMinuto(v.precoMinuto)}</span>
+                <span className="item-carro__precos">
+                  <span className="item-carro__preco">{porMinuto(v.precoMinuto)}</span>
+                  <span className="item-carro__km">{porKm(v.precoKm)}</span>
+                </span>
               </button>
             ))
           )}

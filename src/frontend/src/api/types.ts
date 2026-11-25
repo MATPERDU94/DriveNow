@@ -84,7 +84,7 @@ export interface Reserva {
   precoMinuto: number;
   precoKm: number | null;
   minutos: number | null;
-  /** minutos × preço por minuto */
+  /** minutos x preço por minuto */
   valorViagem: number | null;
   /** km do carro no momento da reserva */
   kmInicial: number | null;
@@ -92,7 +92,7 @@ export interface Reserva {
   kmFinal: number | null;
   /** km finais - km iniciais (0 se a reserva foi cancelada) */
   kmViagem: number | null;
-  /** km da viagem × preço por km */
+  /** km da viagem x preço por km */
   valorKm: number | null;
   totalPenalizacoes: number | null;
   total: number | null;
