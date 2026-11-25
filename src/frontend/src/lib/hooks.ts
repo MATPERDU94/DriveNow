@@ -34,6 +34,6 @@ export function useIntervalo(fn: () => void, ms: number, ativo = true) {
 /** Título do separador do browser. */
 export function useTitulo(titulo: string) {
   useEffect(() => {
-    document.title = titulo ? `${titulo} · DriveNow` : 'DriveNow';
+    document.title = titulo ? `${titulo} | DriveNow` : 'DriveNow';
   }, [titulo]);
 }

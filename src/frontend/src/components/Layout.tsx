@@ -22,7 +22,7 @@ export function Topo() {
   const { pathname } = useLocation();
   return (
     <header className="topo">
-      <Marca para="/mapa" />
+      <Marca escura para="/mapa" />
       <div style={{ display: 'flex', alignItems: 'center' }}>
         {ativa && pathname !== '/viagem' ? <PilulaViagem r={ativa} /> : null}
         <nav className="topo__nav" aria-label="Principal">

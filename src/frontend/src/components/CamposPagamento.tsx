@@ -15,13 +15,11 @@ export function CamposPagamento({
   aoMudar,
   erros,
   aoFocar,
-  mostrarTeste = true,
 }: {
   valor: DadosPagamento;
   aoMudar: (v: DadosPagamento) => void;
   erros: Erros;
   aoFocar?: () => void;
-  mostrarTeste?: boolean;
 }) {
   const set = <K extends keyof DadosPagamento>(k: K, v: DadosPagamento[K]) => aoMudar({ ...valor, [k]: v });
 
@@ -70,13 +68,6 @@ export function CamposPagamento({
             value={valor.numero}
             onChange={(e) => set('numero', mascaraCartao(e.target.value))}
             erro={erros.numero}
-            ajuda={
-              mostrarTeste ? (
-                <>
-                  Cartões de teste: <b>4242 4242 4242 4242</b> aprova · <b>4000 0000 0000 0002</b> recusa
-                </>
-              ) : undefined
-            }
           />
           <div className="linha">
             <Campo
@@ -116,13 +107,6 @@ export function CamposPagamento({
             value={valor.iban}
             onChange={(e) => set('iban', mascaraIban(e.target.value))}
             erro={erros.iban}
-            ajuda={
-              mostrarTeste ? (
-                <>
-                  IBAN de teste: <b>PT50 0002 0123 1234 5678 9015 4</b>
-                </>
-              ) : undefined
-            }
           />
         </>
       )}

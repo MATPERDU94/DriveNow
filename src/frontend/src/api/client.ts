@@ -11,6 +11,7 @@ import type {
   Utilizador,
   Viatura,
 } from './types';
+import { textosParaTeclado } from '../lib/format';
 
 /** true no modo demonstração (`npm run demo` ou `npm run build:ficheiro`): API simulada no browser, sem backend. */
 export const MODO_DEMO = import.meta.env.MODE === 'demo' || import.meta.env.MODE === 'ficheiro';
@@ -78,11 +79,11 @@ async function pedido<T>(metodo: string, caminho: string, corpo?: unknown): Prom
     const { tratarPedidoDemo } = await import('../demo/mockApi');
     const r = await tratarPedidoDemo(metodo, caminho, corpo, token);
     if (r.status >= 400) {
-      const p = (r.corpo ?? {}) as { title?: string; detail?: string };
+      const p = textosParaTeclado((r.corpo ?? {}) as { title?: string; detail?: string });
       if (r.status === 401 && token) ouvintesSessaoExpirada.forEach((f) => f());
       throw new ApiError(r.status, p.title ?? 'Erro', p.detail ?? mensagemPorEstado(r.status));
     }
-    return (r.status === 204 ? null : r.corpo) as T;
+    return (r.status === 204 ? null : textosParaTeclado(r.corpo)) as T;
   }
 
   let res: Response;
@@ -106,7 +107,7 @@ async function pedido<T>(metodo: string, caminho: string, corpo?: unknown): Prom
   let dados: unknown = null;
   if (texto) {
     try {
-      dados = JSON.parse(texto);
+      dados = textosParaTeclado(JSON.parse(texto));
     } catch {
       dados = null;
     }

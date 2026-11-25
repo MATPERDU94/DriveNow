@@ -309,7 +309,7 @@ export function EstadoCarroModal({
               ) : null}
             </div>
             <p className="campo__ajuda" style={{ marginTop: 8 }}>
-              {local ? moradaAproximada(local) : '—'} · toque no mapa para ajustar
+              {local ? moradaAproximada(local) : '-'} | toque no mapa para ajustar
             </p>
           </div>
         </div>
@@ -337,9 +337,9 @@ export function EstadoCarroModal({
           </div>
           <div>
             <span>
-              {kmDaViagem != null ? `${fmtKmViagem(kmDaViagem)} × ${porKm(reserva.precoKm)}` : `Km da viagem (${porKm(reserva.precoKm)})`}
+              {kmDaViagem != null ? `${fmtKmViagem(kmDaViagem)} x ${porKm(reserva.precoKm)}` : `Km da viagem (${porKm(reserva.precoKm)})`}
             </span>
-            <b className="tabular">{kmDaViagem != null ? euro(valorKm) : '—'}</b>
+            <b className="tabular">{kmDaViagem != null ? euro(valorKm) : '-'}</b>
           </div>
           {penalizacao > 0 ? (
             <div>
@@ -360,7 +360,7 @@ export function EstadoCarroModal({
         <div className="alerta alerta--info" style={{ marginTop: 18 }}>
           <Info size={18} />
           <span>
-            Se reportar um dano agora, ele fica registado no carro e é cobrado a quem o usou antes de si — não a si.
+            Se reportar um dano agora, ele fica registado no carro e é cobrado a quem o usou antes de si - não a si.
           </span>
         </div>
       )}

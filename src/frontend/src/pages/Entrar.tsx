@@ -95,7 +95,7 @@ export default function Entrar() {
             rotulo="Password"
             type="password"
             autoComplete="current-password"
-            placeholder="••••••••"
+            placeholder="********"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             extra={

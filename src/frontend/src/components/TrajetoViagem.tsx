@@ -86,14 +86,14 @@ export function TrajetoViagem({ reservaId, kmPainel }: { reservaId: number; kmPa
             <li>
               <span className="trajeto__marca" />
               <div>
-                <small>Início · onde estava o carro</small>
+                <small>Início | onde estava o carro</small>
                 <b>{moradaAproximada(t.origem)}</b>
               </div>
             </li>
             <li>
               <span className="trajeto__marca trajeto__marca--fim" />
               <div>
-                <small>Fim · onde deixou o carro</small>
+                <small>Fim | onde deixou o carro</small>
                 <b>{moradaAproximada(t.destino)}</b>
               </div>
             </li>
@@ -110,7 +110,7 @@ export function TrajetoViagem({ reservaId, kmPainel }: { reservaId: number; kmPa
           {t.fonte ? <p className="trajeto__fonte">Rotas: {t.fonte}</p> : null}
         </>
       ) : (
-        <p className="trajeto__nota">A carregar o trajeto…</p>
+        <p className="trajeto__nota">A carregar o trajeto...</p>
       )}
     </section>
   );

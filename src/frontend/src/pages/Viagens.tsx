@@ -128,7 +128,8 @@ export default function Viagens() {
               <tr>
                 <th>Data</th>
                 <th>Carro</th>
-                <th>Duração e km</th>
+                <th>Duração</th>
+                <th className="dir">Km</th>
                 <th className="dir">Valor</th>
                 <th>Fatura</th>
                 <th aria-label="Ações" />
@@ -147,9 +148,9 @@ export default function Viagens() {
                       {r.estado === 'CANCELADA' ? <span className="chip chip--cinza chip--mini">Cancelada</span> : null}
                       {r.estadoPagamento === 'EM_DIVIDA' ? <span className="chip chip--perigo chip--mini">Em dívida</span> : null}
                     </td>
-                    <td data-rot="Duração e km">
-                      {duracao(r.minutos ?? r.minutosDecorridos)}
-                      {r.kmViagem ? ` · ${kmViagem(r.kmViagem)}` : ''}
+                    <td data-rot="Duração">{duracao(r.minutos ?? r.minutosDecorridos)}</td>
+                    <td className="dir tabular" data-rot="Km">
+                      {r.kmViagem != null ? kmViagem(r.kmViagem) : '-'}
                     </td>
                     <td className="dir forte tabular" data-rot="Valor">
                       {euro(totalDe(r))}
@@ -165,7 +166,7 @@ export default function Viagens() {
                       ) : r.estadoFatura === 'EMITIDA' ? (
                         <span className="muted">Enviada por email</span>
                       ) : (
-                        <span className="muted">A emitir…</span>
+                        <span className="muted">A emitir...</span>
                       )}
                     </td>
                   </tr>

@@ -1,4 +1,12 @@
-/* DriveNow — sistema de design (cores, tipografia e componentes dos mockups) */
+/* Hífen curto: a Plus Jakarta Sans desenha o "-" tão largo que parece um travessão (ex.: 44-WX-33).
+   Esta fonte só cobre o hífen, tirado de uma fonte do sistema; o resto continua na Plus Jakarta Sans. */
+@font-face {
+  font-family: 'Hifen';
+  src: local('Arial'), local('Helvetica'), local('Segoe UI'), local('Liberation Sans'), local('DejaVu Sans');
+  unicode-range: U+002D;
+}
+
+/* DriveNow - sistema de design (cores, tipografia e componentes dos mockups) */
 
 :root {
   --navy: #16233f;
@@ -34,7 +42,7 @@
   --shadow-lg: 0 18px 50px rgba(22, 35, 63, 0.18);
   --header-h: 78px;
 
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Hifen', 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   color: var(--text);
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
@@ -158,9 +166,8 @@ img {
   top: 0;
   z-index: 1000;
   height: var(--header-h);
-  background: rgba(255, 255, 255, 0.96);
-  backdrop-filter: saturate(1.4) blur(8px);
-  border-bottom: 1px solid var(--border);
+  background: var(--navy);
+  border-bottom: 1px solid var(--navy-2);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -239,6 +246,9 @@ img {
 }
 .pilula-viagem:hover {
   color: #fff;
+  background: var(--navy-3);
+}
+.topo .pilula-viagem {
   background: var(--navy-3);
 }
 .pilula-viagem strong {
@@ -926,7 +936,7 @@ textarea.input {
   border: 2px solid #fff;
   cursor: pointer;
   transition: transform 0.12s, box-shadow 0.12s;
-  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-family: 'Hifen', 'Plus Jakarta Sans', system-ui, sans-serif;
   font-variant-numeric: tabular-nums;
 }
 .preco-pin:hover {
@@ -1015,9 +1025,6 @@ textarea.input {
   }
   .topo {
     padding: 0 16px;
-    /* sem backdrop-filter: senão a barra de navegação fixa ficava presa ao cabeçalho */
-    backdrop-filter: none;
-    background: #fff;
   }
   .topo__nav {
     position: fixed;
@@ -1092,6 +1099,29 @@ textarea.input {
     bottom: calc(86px + env(safe-area-inset-bottom));
   }
 }
+/* Cabeçalho azul (computador): links claros, o ativo em branco */
+@media (min-width: 861px) {
+  .topo .topo__link {
+    color: rgba(255, 255, 255, 0.78);
+  }
+  .topo .topo__link:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+  }
+  .topo .topo__link.active {
+    background: #fff;
+    color: var(--navy);
+  }
+  .topo .avatar {
+    background: var(--sky);
+    color: var(--navy);
+  }
+  .topo .avatar:hover {
+    background: var(--sky-hover);
+    color: var(--navy);
+  }
+}
+
 @media (min-width: 861px) {
   .so-movel {
     display: none !important;

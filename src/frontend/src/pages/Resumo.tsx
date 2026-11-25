@@ -103,10 +103,10 @@ export default function Resumo() {
         <div className="recibo__topo">
           <div>
             <p className="recibo__carro">
-              {modelo} · {r.matricula}
+              {modelo} | {r.matricula}
             </p>
             <p className="recibo__quando">
-              {data(r.criadaEm)} · {hora(r.criadaEm)} → {hora(r.fimViagem)}
+              {data(r.criadaEm)}, das {hora(r.criadaEm)} às {hora(r.fimViagem)}
             </p>
           </div>
           <p className="recibo__total tabular">{euro(total)}</p>
@@ -120,7 +120,7 @@ export default function Resumo() {
             <div>
               <dt>
                 Distância
-                {r.kmInicial != null && r.kmFinal != null ? ` (painel: ${km(r.kmInicial)} → ${km(r.kmFinal)})` : ''}
+                {r.kmInicial != null && r.kmFinal != null ? ` (painel: de ${km(r.kmInicial)} a ${km(r.kmFinal)})` : ''}
               </dt>
               <dd>{kmViagem(r.kmViagem)}</dd>
             </div>
@@ -131,14 +131,14 @@ export default function Resumo() {
           </div>
           <div>
             <dt>
-              Tempo ({minutos} min × {porMinuto(r.precoMinuto)})
+              Tempo ({minutos} min x {porMinuto(r.precoMinuto)})
             </dt>
             <dd>{euro(r.valorViagem ?? minutos * r.precoMinuto)}</dd>
           </div>
           {comKm ? (
             <div>
               <dt>
-                Km ({kmViagem(r.kmViagem)} × {porKm(r.precoKm)})
+                Km ({kmViagem(r.kmViagem)} x {porKm(r.precoKm)})
               </dt>
               <dd>{euro(r.valorKm)}</dd>
             </div>
@@ -161,7 +161,7 @@ export default function Resumo() {
             <dt>Pagamento</dt>
             <dd>
               {r.estadoPagamento === 'EM_DIVIDA' ? (
-                <span className="chip chip--perigo">Recusado · em dívida</span>
+                <span className="chip chip--perigo">Recusado | em dívida</span>
               ) : r.estadoPagamento === 'PAGO' ? (
                 r.pagamentoDescricao ?? 'Pago'
               ) : (
@@ -197,8 +197,8 @@ export default function Resumo() {
                   <b>{d.tipoDano}</b>
                   <small>
                     {d.momento === 'INICIO' ? 'No início da viagem' : 'No fim da viagem'}
-                    {d.descricao ? ` · ${d.descricao}` : ''}
-                    {d.nota ? ` · ${d.nota}` : ''}
+                    {d.descricao ? ` | ${d.descricao}` : ''}
+                    {d.nota ? ` | ${d.nota}` : ''}
                   </small>
                 </div>
                 <span className="tabular">{d.momento === 'FIM' && d.penalizacao ? euro(d.penalizacao) : 'Sem custo para si'}</span>
@@ -244,7 +244,7 @@ export default function Resumo() {
           <>
             <FileClock size={30} />
             <div className="fatura__txt">
-              <b>A emitir a fatura-recibo…</b>
+              <b>A emitir a fatura-recibo...</b>
               <span>Aparece aqui e no email assim que estiver pronta. Não precisa de esperar.</span>
             </div>
             {aEmitir && Date.now() - inicioPoll < 120000 ? <Spinner /> : null}

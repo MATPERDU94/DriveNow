@@ -17,12 +17,37 @@ export const euro = (v: number | null | undefined) => euroFmt.format(v ?? 0);
 /** 0,32 €/min */
 export const porMinuto = (v: number | null | undefined) => `${num2.format(v ?? 0)} €/min`;
 
+/** Caracteres que não existem no teclado português (de Portugal) e o que se escreve em vez deles. */
+const TECLADO: [RegExp, string][] = [
+  [/[\u2014\u2013]/g, '-'],
+  [/\u00b7/g, '|'],
+  [/\u00d7/g, 'x'],
+  [/\u2026/g, '...'],
+  [/\u2022/g, '*'],
+  [/\u2192/g, '->'],
+  [/[\u201c\u201d]/g, '"'],
+  [/[\u2018\u2019]/g, "'"],
+];
+
+/** Texto só com caracteres do teclado português: "Visa \u2022\u2022\u2022\u2022 4242" passa a "Visa **** 4242". */
+export const paraTeclado = (s: string) => TECLADO.reduce((t, [re, por]) => t.replace(re, por), s);
+
+/** Aplica paraTeclado a todos os textos de uma resposta da API (objetos e listas, a qualquer profundidade). */
+export function textosParaTeclado<T>(v: T): T {
+  if (typeof v === 'string') return paraTeclado(v) as T;
+  if (Array.isArray(v)) return v.map((x) => textosParaTeclado(x)) as T;
+  if (v && typeof v === 'object') {
+    return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, textosParaTeclado(x)])) as T;
+  }
+  return v;
+}
+
 /** 0,15 €/km */
 export const porKm = (v: number | null | undefined) => `${num2.format(v ?? 0)} €/km`;
 
-/** 320 m · 1,2 km */
+/** 320 m | 1,2 km */
 export function distancia(km: number | null | undefined): string {
-  if (km == null) return '—';
+  if (km == null) return '-';
   if (km < 1) return `${Math.max(10, Math.round((km * 1000) / 10) * 10)} m`;
   return `${num1.format(km)} km`;
 }
@@ -30,30 +55,30 @@ export function distancia(km: number | null | undefined): string {
 /** Minutos a pé (≈ 80 m por minuto). */
 export const minutosAPe = (km: number) => Math.max(1, Math.round((km * 1000) / 80));
 
-export const km = (v: number | null | undefined) => (v == null ? '—' : `${inteiro.format(v)} km`);
+export const km = (v: number | null | undefined) => (v == null ? '-' : `${inteiro.format(v)} km`);
 
-/** Km de uma viagem, com uma casa decimal se for preciso: 12 km · 12,3 km */
+/** Km de uma viagem, com uma casa decimal se for preciso: 12 km | 12,3 km */
 export const kmViagem = (v: number | null | undefined) =>
-  v == null ? '—' : `${new Intl.NumberFormat('pt-PT', { maximumFractionDigits: 1 }).format(v)} km`;
+  v == null ? '-' : `${new Intl.NumberFormat('pt-PT', { maximumFractionDigits: 1 }).format(v)} km`;
 
 /** Máximo de km numa viagem (o mesmo do backend): mais do que isto é um engano ao escrever os km do painel. */
 export const MAX_KM_VIAGEM = 1000;
 
 /** 4 nov 2026 */
 export function data(iso: string | null | undefined): string {
-  if (!iso) return '—';
+  if (!iso) return '-';
   const d = new Date(iso);
   return `${d.getDate()} ${MESES[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 /** 10:12 */
 export function hora(iso: string | null | undefined): string {
-  if (!iso) return '—';
+  if (!iso) return '-';
   const d = new Date(iso);
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
-/** 23 min · 1 h 05 min */
+/** 23 min | 1 h 05 min */
 export function duracao(minutos: number | null | undefined): string {
   const m = Math.max(0, Math.round(minutos ?? 0));
   if (m < 60) return `${m} min`;
@@ -62,7 +87,7 @@ export function duracao(minutos: number | null | undefined): string {
   return r ? `${h} h ${String(r).padStart(2, '0')} min` : `${h} h`;
 }
 
-/** 25:51 · 1:02:07 */
+/** 25:51 | 1:02:07 */
 export function cronometro(segundos: number): string {
   const s = Math.max(0, Math.floor(segundos));
   const h = Math.floor(s / 3600);

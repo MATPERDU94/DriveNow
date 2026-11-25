@@ -95,7 +95,7 @@ export default function CriarConta() {
   return (
     <div className="registo">
       <header className="topo topo--simples">
-        <Marca para="/entrar" />
+        <Marca escura para="/entrar" />
         <p className="topo__aux">
           Já tem conta? <Link to="/entrar">Entrar</Link>
         </p>

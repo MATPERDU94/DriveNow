@@ -56,7 +56,7 @@ export function distanciaKm(a: Ponto, b: Ponto): number {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
-/** "Perto de Largo do Toural · Guimarães" */
+/** "Perto de Largo do Toural | Guimarães" */
 export function moradaAproximada(p: Ponto): string {
   let melhor = LOCAIS[0];
   let dMelhor = Infinity;
@@ -68,7 +68,7 @@ export function moradaAproximada(p: Ponto): string {
     }
   }
   if (dMelhor > 3) return `${p.lat.toFixed(4)}, ${p.lng.toFixed(4)}`;
-  return dMelhor < 0.08 ? `${melhor.nome} · Guimarães` : `Perto de ${melhor.nome} · Guimarães`;
+  return dMelhor < 0.08 ? `${melhor.nome} | Guimarães` : `Perto de ${melhor.nome} | Guimarães`;
 }
 
 export type EstadoGps = 'a-procurar' | 'ok' | 'fora-da-zona' | 'sem-permissao' | 'indisponivel';

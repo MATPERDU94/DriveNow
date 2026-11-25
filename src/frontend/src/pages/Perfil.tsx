@@ -31,10 +31,10 @@ function CartaoVisual({ m }: { m: MeioPagamento }) {
       </div>
       <div className="cartao-pag__num tabular">
         {conta ? (
-          <>PT50 •••• •••• •••• {m.ultimosDigitos}</>
+          <>PT50 **** **** **** {m.ultimosDigitos}</>
         ) : (
           <>
-            <span>••••</span> <span>••••</span> <span>••••</span> {m.ultimosDigitos}
+            <span>****</span> <span>****</span> <span>****</span> {m.ultimosDigitos}
           </>
         )}
       </div>

@@ -99,7 +99,7 @@ export default function Viagem() {
               <span className="ponto-vivo" /> {emCurso ? 'Em viagem' : 'Reservado'}
             </span>
             <h1 className="viagem__titulo">
-              {viatura ? nomeModelo(viatura.modelo) : modelo} · <span className="matricula">{ativa.matricula}</span>
+              {viatura ? nomeModelo(viatura.modelo) : modelo} | <span className="matricula">{ativa.matricula}</span>
             </h1>
           </div>
           <span className="chip-navy">{porMinuto(ativa.precoMinuto)}</span>
@@ -140,7 +140,7 @@ export default function Viagem() {
               {euro(valor)}
             </div>
             <div className="viagem__det">
-              {euro(ativa.taxaEntrada)} de entrada + {minutos} min × {porMinuto(ativa.precoMinuto)}
+              {euro(ativa.taxaEntrada)} de entrada + {minutos} min x {porMinuto(ativa.precoMinuto)}
               <br />
               Os km somam-se no fim ({porKm(ativa.precoKm)})
             </div>
@@ -195,10 +195,10 @@ export default function Viagem() {
               </MapContainer>
             ) : null}
           </div>
-          <p className="onde__morada">{posCarro ? moradaAproximada(posCarro) : 'A obter a localização…'}</p>
+          <p className="onde__morada">{posCarro ? moradaAproximada(posCarro) : 'A obter a localização...'}</p>
           {!emCurso && distCarro != null ? (
             <p className="onde__dist">
-              <Footprints size={15} /> {distancia(distCarro)} · {minutosAPe(distCarro)} min a pé
+              <Footprints size={15} /> {distancia(distCarro)} | {minutosAPe(distCarro)} min a pé
             </p>
           ) : null}
           {!emCurso && posCarro ? (
@@ -282,7 +282,7 @@ export default function Viagem() {
             </div>
             <div>
               <span>
-                {minutos} min × {porMinuto(ativa.precoMinuto)}
+                {minutos} min x {porMinuto(ativa.precoMinuto)}
               </span>
               <b className="tabular">{euro(minutos * ativa.precoMinuto)}</b>
             </div>
