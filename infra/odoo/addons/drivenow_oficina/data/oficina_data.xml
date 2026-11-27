@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Armazém da oficina, saídas de peças e fornecedores (documento "Oficina, revisões e peças"). -->
+<odoo>
+    <data noupdate="1">
+
+        <!-- O armazém que o Odoo cria por omissão passa a ser o da oficina (OFI/Stock). -->
+        <record id="stock.warehouse0" model="stock.warehouse">
+            <field name="name">Oficina DriveNow</field>
+            <field name="code">OFI</field>
+        </record>
+
+        <record id="categoria_pecas" model="product.category">
+            <field name="name">Peças da oficina</field>
+        </record>
+
+        <!-- Saídas: as peças gastas numa revisão ou reparação vão para aqui, com a matrícula do carro. -->
+        <record id="local_consumo" model="stock.location">
+            <field name="name">Consumo na oficina</field>
+            <field name="usage">inventory</field>
+        </record>
+
+        <record id="tipo_consumo" model="stock.picking.type">
+            <field name="name">Consumo na oficina</field>
+            <field name="code">outgoing</field>
+            <field name="sequence_code">CON</field>
+            <field name="sequence">20</field>
+            <field name="warehouse_id" ref="stock.warehouse0"/>
+            <field name="default_location_src_id" ref="stock.stock_location_stock"/>
+            <field name="default_location_dest_id" ref="local_consumo"/>
+        </record>
+
+        <!-- Fornecedores fictícios (os emails usam o domínio reservado .example). -->
+        <record id="fornecedor_pneus" model="res.partner">
+            <field name="name">Fornecedor de pneus</field>
+            <field name="is_company" eval="True"/>
+            <field name="city">Guimarães</field>
+            <field name="country_id" ref="base.pt"/>
+            <field name="email">encomendas@pneus.example</field>
+            <field name="supplier_rank">1</field>
+        </record>
+
+        <record id="fornecedor_pecas" model="res.partner">
+            <field name="name">Fornecedor de peças auto</field>
+            <field name="is_company" eval="True"/>
+            <field name="city">Braga</field>
+            <field name="country_id" ref="base.pt"/>
+            <field name="email">encomendas@pecas.example</field>
+            <field name="supplier_rank">1</field>
+        </record>
+
+    </data>
+</odoo>

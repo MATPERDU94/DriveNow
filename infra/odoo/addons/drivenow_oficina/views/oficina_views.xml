@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Menu Frota -> Oficina: atalhos para o gestor de frota, sem ter de abrir as apps Inventário e Compras. -->
+<odoo>
+    <record id="action_pecas" model="ir.actions.act_window">
+        <field name="name">Peças em stock</field>
+        <field name="res_model">product.product</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain" eval="[('categ_id', '=', ref('categoria_pecas'))]"/>
+        <field name="context" eval="{'default_categ_id': ref('categoria_pecas'), 'default_is_storable': True, 'default_sale_ok': False}"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Ainda não há peças na oficina.</p>
+            <p>As peças da oficina têm a categoria "Peças da oficina", um fornecedor e uma regra de mínimo e máximo.</p>
+        </field>
+    </record>
+
+    <record id="action_regras" model="ir.actions.act_window">
+        <field name="name">Mínimos e máximos</field>
+        <field name="res_model">stock.warehouse.orderpoint</field>
+        <field name="view_mode">list</field>
+        <field name="domain" eval="[('product_id.categ_id', '=', ref('categoria_pecas'))]"/>
+        <field name="help" type="html">
+            <p>Quando o stock de uma peça desce abaixo do mínimo, o Odoo cria um pedido de cotação ao fornecedor até ao máximo.</p>
+        </field>
+    </record>
+
+    <record id="action_compras" model="ir.actions.act_window">
+        <field name="name">Compras de peças</field>
+        <field name="res_model">purchase.order</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p>Os pedidos de cotação aparecem aqui sozinhos quando uma peça fica abaixo do mínimo. O gestor confirma-os.</p>
+        </field>
+    </record>
+
+    <record id="action_saidas" model="ir.actions.act_window">
+        <field name="name">Saídas de peças</field>
+        <field name="res_model">stock.picking</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain" eval="[('picking_type_id', '=', ref('tipo_consumo'))]"/>
+        <field name="context" eval="{'default_picking_type_id': ref('tipo_consumo'), 'restricted_picking_type_code': 'outgoing'}"/>
+        <field name="help" type="html">
+            <p>Cada peça gasta numa revisão ou reparação sai do armazém da oficina, com a matrícula do carro em "Documento de origem".</p>
+        </field>
+    </record>
+
+    <menuitem id="menu_oficina" name="Oficina" parent="fleet.menu_root" sequence="53"/>
+    <menuitem id="menu_pecas" name="Peças em stock" parent="menu_oficina" action="action_pecas" sequence="1"/>
+    <menuitem id="menu_regras" name="Mínimos e máximos" parent="menu_oficina" action="action_regras" sequence="2"/>
+    <menuitem id="menu_compras" name="Compras de peças" parent="menu_oficina" action="action_compras" sequence="3"/>
+    <menuitem id="menu_saidas" name="Saídas de peças" parent="menu_oficina" action="action_saidas" sequence="4"/>
+</odoo>

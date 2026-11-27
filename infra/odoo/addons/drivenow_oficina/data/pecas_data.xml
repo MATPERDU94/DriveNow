@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- As 11 peças do armazém da oficina, com fornecedor, preço de compra e regra de mínimo e máximo.
+     Gerado a partir da tabela "Peças em stock" do documento "Oficina, revisões e peças". -->
+<odoo>
+    <data noupdate="1">
+
+        <!-- Pneu: mínimo 8, máximo 16 -->
+        <record id="peca_pneu" model="product.product">
+            <field name="name">Pneu</field>
+            <field name="default_code">DN-PNEU</field>
+            <field name="type">consu</field>
+            <field name="is_storable" eval="True"/>
+            <field name="categ_id" ref="categoria_pecas"/>
+            <field name="uom_id" ref="uom.product_uom_unit"/>
+            <field name="standard_price">85</field>
+            <field name="list_price">0</field>
+            <field name="sale_ok" eval="False"/>
+            <field name="purchase_ok" eval="True"/>
+            <field name="description">&lt;p&gt;Usada em: Revisão; dano "pneu furado ou danificado"&lt;/p&gt;</field>
+            <field name="route_ids" eval="[(4, ref('purchase_stock.route_warehouse0_buy'))]"/>
+            <field name="seller_ids" eval="[(0, 0, {'partner_id': ref('fornecedor_pneus'), 'price': 85, 'delay': 5})]"/>
+        </record>
+        <record id="regra_pneu" model="stock.warehouse.orderpoint">
+            <field name="product_id" ref="peca_pneu"/>
+            <field name="warehouse_id" ref="stock.warehouse0"/>
+            <field name="location_id" ref="stock.stock_location_stock"/>
+            <field name="product_min_qty">8</field>
+            <field name="product_max_qty">16</field>
+            <field name="trigger">auto</field>
+            <field name="route_id" ref="purchase_stock.route_warehouse0_buy"/>
+        </record>
+
+        <!-- Pastilhas de travão (jogo de um eixo): mínimo 3, máximo 6 -->
+        <record id="peca_pastilhas" model="product.product">
+            <field name="name">Pastilhas de travão (jogo de um eixo)</field>
+            <field name="default_code">DN-PAST</field>
+            <field name="type">consu</field>
+            <field name="is_storable" eval="True"/>
+            <field name="categ_id" ref="categoria_pecas"/>
+            <field name="uom_id" ref="uom.product_uom_unit"/>
+            <field name="standard_price">45</field>
+            <field name="list_price">0</field>
+            <field name="sale_ok" eval="False"/>
+            <field name="purchase_ok" eval="True"/>
+            <field name="description">&lt;p&gt;Usada em: Revisão&lt;/p&gt;</field>
+            <field name="route_ids" eval="[(4, ref('purchase_stock.route_warehouse0_buy'))]"/>
+            <field name="seller_ids" eval="[(0, 0, {'partner_id': ref('fornecedor_pecas'), 'price': 45, 'delay': 5})]"/>
+        </record>
+        <record id="regra_pastilhas" model="stock.warehouse.orderpoint">
+            <field name="product_id" ref="peca_pastilhas"/>
+            <field name="warehouse_id" ref="stock.warehouse0"/>
+            <field name="location_id" ref="stock.stock_location_stock"/>
+            <field name="product_min_qty">3</field>
+            <field name="product_max_qty">6</field>
+            <field name="trigger">auto</field>
+            <field name="route_id" ref="purchase_stock.route_warehouse0_buy"/>
+        </record>
+
+        <!-- Filtro do habitáculo: mínimo 4, máximo 10 -->
+        <record id="peca_filtro" model="product.product">
+            <field name="name">Filtro do habitáculo</field>
+            <field name="default_code">DN-FILT</field>
+            <field name="type">consu</field>
+            <field name="is_storable" eval="True"/>
+            <field name="categ_id" ref="categoria_pecas"/>
+            <field name="uom_id" ref="uom.product_uom_unit"/>
+            <field name="standard_price">18</field>
+            <field name="list_price">0</field>
+            <field name="sale_ok" eval="False"/>
+            <field name="purchase_ok" eval="True"/>
+            <field name="description">&lt;p&gt;Usada em: Revisão (uma vez por ano)&lt;/p&gt;</field>
+            <field name="route_ids" eval="[(4, ref('purchase_stock.route_warehouse0_buy'))]"/>
+            <field name="seller_ids" eval="[(0, 0, {'partner_id': ref('fornecedor_pecas'), 'price': 18, 'delay': 5})]"/>
+        </record>
+        <record id="regra_filtro" model="stock.warehouse.orderpoint">
+            <field name="product_id" ref="peca_filtro"/>
+            <field name="warehouse_id" ref="stock.warehouse0"/>
+            <field name="location_id" ref="stock.stock_location_stock"/>
+            <field name="product_min_qty">4</field>
+            <field name="product_max_qty">10</field>
+            <field name="trigger">auto</field>
+            <field name="route_id" ref="purchase_stock.route_warehouse0_buy"/>
+        </record>
+
+        <!-- Escovas limpa-para-brisas (par): mínimo 4, máximo 10 -->
+        <record id="peca_escovas" model="product.product">
+            <field name="name">Escovas limpa-para-brisas (par)</field>
+            <field name="default_code">DN-ESCO</field>
+            <field name="type">consu</field>
+            <field name="is_storable" eval="True"/>
+            <field name="categ_id" ref="categoria_pecas"/>
+            <field name="uom_id" ref="uom.product_uom_unit"/>
+            <field name="standard_price">22</field>
+            <field name="list_price">0</field>
+            <field name="sale_ok" eval="False"/>
+            <field name="purchase_ok" eval="True"/>
+            <field name="description">&lt;p&gt;Usada em: Revisão (uma vez por ano)&lt;/p&gt;</field>
+            <field name="route_ids" eval="[(4, ref('purchase_stock.route_warehouse0_buy'))]"/>
+            <field name="seller_ids" eval="[(0, 0, {'partner_id': ref('fornecedor_pecas'), 'price': 22, 'delay': 5})]"/>
+        </record>
+        <record id="regra_escovas" model="stock.warehouse.orderpoint">
+            <field name="product_id" ref="peca_escovas"/>
+            <field name="warehouse_id" ref="stock.warehouse0"/>
+            <field name="location_id" ref="stock.stock_location_stock"/>
+            <field name="product_min_qty">4</field>
+            <field name="product_max_qty">10</field>
+            <field name="trigger">auto</field>
+            <field name="route_id" ref="purchase_stock.route_warehouse0_buy"/>
+        </record>
+
+        <!-- Líquido de travões DOT 4: mínimo 2, máximo 5 -->
+        <record id="peca_liquido_travoes" model="product.product">
+            <field name="name">Líquido de travões DOT 4</field>
+            <field name="default_code">DN-LTRA</field>
+            <field name="type">consu</field>
+            <field name="is_storable" eval="True"/>
+            <field name="categ_id" ref="categoria_pecas"/>
+            <field name="uom_id" ref="uom.product_uom_litre"/>
+            <field name="standard_price">9</field>
+            <field name="list_price">0</field>
+            <field name="sale_ok" eval="False"/>
+            <field name="purchase_ok" eval="True"/>
+            <field name="description">&lt;p&gt;Usada em: Revisão (a cada 4 anos)&lt;/p&gt;</field>
+            <field name="route_ids" eval="[(4, ref('purchase_stock.route_warehouse0_buy'))]"/>
+            <field name="seller_ids" eval="[(0, 0, {'partner_id': ref('fornecedor_pecas'), 'price': 9, 'delay': 5})]"/>
+        </record>
+        <record id="regra_liquido_travoes" model="stock.warehouse.orderpoint">
+            <field name="product_id" ref="peca_liquido_travoes"/>
+            <field name="warehouse_id" ref="stock.warehouse0"/>
+            <field name="location_id" ref="stock.stock_location_stock"/>
+            <field name="product_min_qty">2</field>
+            <field name="product_max_qty">5</field>
+            <field name="trigger">auto</field>
+            <field name="route_id" ref="purchase_stock.route_warehouse0_buy"/>
+        </record>
+
+        <!-- Líquido limpa-vidros: mínimo 20, máximo 60 -->
+        <record id="peca_limpa_vidros" model="product.product">
+            <field name="name">Líquido limpa-vidros</field>
+            <field name="default_code">DN-LVID</field>
+            <field name="type">consu</field>
+            <field name="is_storable" eval="True"/>
+            <field name="categ_id" ref="categoria_pecas"/>
+            <field name="uom_id" ref="uom.product_uom_litre"/>
+            <field name="standard_price">2</field>
+            <field name="list_price">0</field>
+            <field name="sale_ok" eval="False"/>
+            <field name="purchase_ok" eval="True"/>
+            <field name="description">&lt;p&gt;Usada em: Revisão (atestar)&lt;/p&gt;</field>
+            <field name="route_ids" eval="[(4, ref('purchase_stock.route_warehouse0_buy'))]"/>
+            <field name="seller_ids" eval="[(0, 0, {'partner_id': ref('fornecedor_pecas'), 'price': 2, 'delay': 5})]"/>
+        </record>
+        <record id="regra_limpa_vidros" model="stock.warehouse.orderpoint">
+            <field name="product_id" ref="peca_limpa_vidros"/>
+            <field name="warehouse_id" ref="stock.warehouse0"/>
+            <field name="location_id" ref="stock.stock_location_stock"/>
+            <field name="product_min_qty">20</field>
+            <field name="product_max_qty">60</field>
+            <field name="trigger">auto</field>
+            <field name="route_id" ref="purchase_stock.route_warehouse0_buy"/>
+        </record>
+
+        <!-- Bateria de 12 V: mínimo 1, máximo 3 -->
+        <record id="peca_bateria" model="product.product">
+            <field name="name">Bateria de 12 V</field>
+            <field name="default_code">DN-BAT12</field>
+            <field name="type">consu</field>
+            <field name="is_storable" eval="True"/>
+            <field name="categ_id" ref="categoria_pecas"/>
+            <field name="uom_id" ref="uom.product_uom_unit"/>
+            <field name="standard_price">120</field>
+            <field name="list_price">0</field>
+            <field name="sale_ok" eval="False"/>
+            <field name="purchase_ok" eval="True"/>
+            <field name="description">&lt;p&gt;Usada em: Revisão (a cada 4 anos)&lt;/p&gt;</field>
+            <field name="route_ids" eval="[(4, ref('purchase_stock.route_warehouse0_buy'))]"/>
+            <field name="seller_ids" eval="[(0, 0, {'partner_id': ref('fornecedor_pecas'), 'price': 120, 'delay': 5})]"/>
+        </record>
+        <record id="regra_bateria" model="stock.warehouse.orderpoint">
+            <field name="product_id" ref="peca_bateria"/>
+            <field name="warehouse_id" ref="stock.warehouse0"/>
+            <field name="location_id" ref="stock.stock_location_stock"/>
+            <field name="product_min_qty">1</field>
+            <field name="product_max_qty">3</field>
+            <field name="trigger">auto</field>
+            <field name="route_id" ref="purchase_stock.route_warehouse0_buy"/>
+        </record>
+
+        <!-- Espelho retrovisor (vidro e capa): mínimo 1, máximo 3 -->
+        <record id="peca_espelho" model="product.product">
+            <field name="name">Espelho retrovisor (vidro e capa)</field>
+            <field name="default_code">DN-ESPE</field>
+            <field name="type">consu</field>
+            <field name="is_storable" eval="True"/>
+            <field name="categ_id" ref="categoria_pecas"/>
+            <field name="uom_id" ref="uom.product_uom_unit"/>
+            <field name="standard_price">60</field>
+            <field name="list_price">0</field>
+            <field name="sale_ok" eval="False"/>
+            <field name="purchase_ok" eval="True"/>
+            <field name="description">&lt;p&gt;Usada em: Dano "espelho retrovisor partido"&lt;/p&gt;</field>
+            <field name="route_ids" eval="[(4, ref('purchase_stock.route_warehouse0_buy'))]"/>
+            <field name="seller_ids" eval="[(0, 0, {'partner_id': ref('fornecedor_pecas'), 'price': 60, 'delay': 5})]"/>
+        </record>
+        <record id="regra_espelho" model="stock.warehouse.orderpoint">
+            <field name="product_id" ref="peca_espelho"/>
+            <field name="warehouse_id" ref="stock.warehouse0"/>
+            <field name="location_id" ref="stock.stock_location_stock"/>
+            <field name="product_min_qty">1</field>
+            <field name="product_max_qty">3</field>
+            <field name="trigger">auto</field>
+            <field name="route_id" ref="purchase_stock.route_warehouse0_buy"/>
+        </record>
+
+        <!-- Farolim / lâmpadas: mínimo 2, máximo 5 -->
+        <record id="peca_farolim" model="product.product">
+            <field name="name">Farolim / lâmpadas</field>
+            <field name="default_code">DN-FARO</field>
+            <field name="type">consu</field>
+            <field name="is_storable" eval="True"/>
+            <field name="categ_id" ref="categoria_pecas"/>
+            <field name="uom_id" ref="uom.product_uom_unit"/>
+            <field name="standard_price">35</field>
+            <field name="list_price">0</field>
+            <field name="sale_ok" eval="False"/>
+            <field name="purchase_ok" eval="True"/>
+            <field name="description">&lt;p&gt;Usada em: Dano "farol ou farolim partido"&lt;/p&gt;</field>
+            <field name="route_ids" eval="[(4, ref('purchase_stock.route_warehouse0_buy'))]"/>
+            <field name="seller_ids" eval="[(0, 0, {'partner_id': ref('fornecedor_pecas'), 'price': 35, 'delay': 5})]"/>
+        </record>
+        <record id="regra_farolim" model="stock.warehouse.orderpoint">
+            <field name="product_id" ref="peca_farolim"/>
+            <field name="warehouse_id" ref="stock.warehouse0"/>
+            <field name="location_id" ref="stock.stock_location_stock"/>
+            <field name="product_min_qty">2</field>
+            <field name="product_max_qty">5</field>
+            <field name="trigger">auto</field>
+            <field name="route_id" ref="purchase_stock.route_warehouse0_buy"/>
+        </record>
+
+        <!-- Cabo de carregamento tipo 2: mínimo 1, máximo 2 -->
+        <record id="peca_cabo" model="product.product">
+            <field name="name">Cabo de carregamento tipo 2</field>
+            <field name="default_code">DN-CABO</field>
+            <field name="type">consu</field>
+            <field name="is_storable" eval="True"/>
+            <field name="categ_id" ref="categoria_pecas"/>
+            <field name="uom_id" ref="uom.product_uom_unit"/>
+            <field name="standard_price">180</field>
+            <field name="list_price">0</field>
+            <field name="sale_ok" eval="False"/>
+            <field name="purchase_ok" eval="True"/>
+            <field name="description">&lt;p&gt;Usada em: Dano "cabo de carregamento"&lt;/p&gt;</field>
+            <field name="route_ids" eval="[(4, ref('purchase_stock.route_warehouse0_buy'))]"/>
+            <field name="seller_ids" eval="[(0, 0, {'partner_id': ref('fornecedor_pecas'), 'price': 180, 'delay': 5})]"/>
+        </record>
+        <record id="regra_cabo" model="stock.warehouse.orderpoint">
+            <field name="product_id" ref="peca_cabo"/>
+            <field name="warehouse_id" ref="stock.warehouse0"/>
+            <field name="location_id" ref="stock.stock_location_stock"/>
+            <field name="product_min_qty">1</field>
+            <field name="product_max_qty">2</field>
+            <field name="trigger">auto</field>
+            <field name="route_id" ref="purchase_stock.route_warehouse0_buy"/>
+        </record>
+
+        <!-- Produtos de limpeza do interior (kit): mínimo 3, máximo 10 -->
+        <record id="peca_limpeza" model="product.product">
+            <field name="name">Produtos de limpeza do interior (kit)</field>
+            <field name="default_code">DN-LIMP</field>
+            <field name="type">consu</field>
+            <field name="is_storable" eval="True"/>
+            <field name="categ_id" ref="categoria_pecas"/>
+            <field name="uom_id" ref="uom.product_uom_unit"/>
+            <field name="standard_price">15</field>
+            <field name="list_price">0</field>
+            <field name="sale_ok" eval="False"/>
+            <field name="purchase_ok" eval="True"/>
+            <field name="description">&lt;p&gt;Usada em: Danos "interior sujo" e "estofos"&lt;/p&gt;</field>
+            <field name="route_ids" eval="[(4, ref('purchase_stock.route_warehouse0_buy'))]"/>
+            <field name="seller_ids" eval="[(0, 0, {'partner_id': ref('fornecedor_pecas'), 'price': 15, 'delay': 5})]"/>
+        </record>
+        <record id="regra_limpeza" model="stock.warehouse.orderpoint">
+            <field name="product_id" ref="peca_limpeza"/>
+            <field name="warehouse_id" ref="stock.warehouse0"/>
+            <field name="location_id" ref="stock.stock_location_stock"/>
+            <field name="product_min_qty">3</field>
+            <field name="product_max_qty">10</field>
+            <field name="trigger">auto</field>
+            <field name="route_id" ref="purchase_stock.route_warehouse0_buy"/>
+        </record>
+
+    </data>
+</odoo>

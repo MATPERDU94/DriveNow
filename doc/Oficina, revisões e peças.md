@@ -1,6 +1,6 @@
 # DriveNow — Oficina, revisões e peças
 
-Nov 20, 2026 · @Mateus
+Nov 20, 2026 · @Mateus · atualizado a 27/11 (módulo `drivenow_oficina`)
 
 ## Resumo
 
@@ -62,19 +62,21 @@ Para cada tipo de dano da tabela do Odoo:
 
 O armazém da oficina tem 11 peças. O stock mínimo cobre cerca de um mês de consumo e o máximo dois a três meses. Os valores são estimativas para 30 carros, a validar pelo grupo.
 
-| Peça | Usada em | Unidade | Consumo estimado por mês | Mínimo | Máximo |
-| --- | --- | --- | --- | --- | --- |
-| Pneu | Revisão, dano "pneu" | unidade | 5 a 6 | 8 | 16 |
-| Pastilhas de travão | Revisão | jogo (um eixo) | 1 a 2 | 3 | 6 |
-| Filtro do habitáculo | Revisão | unidade | 2 a 3 | 4 | 10 |
-| Escovas limpa-para-brisas | Revisão | par | 2 a 3 | 4 | 10 |
-| Líquido de travões DOT 4 | Revisão | litro | menos de 1 | 2 | 5 |
-| Líquido limpa-vidros | Revisão | litro | cerca de 20 | 20 | 60 |
-| Bateria de 12 V | Revisão | unidade | menos de 1 | 1 | 3 |
-| Espelho retrovisor (vidro e capa) | Dano "espelho" | unidade | menos de 1 | 1 | 3 |
-| Farolim / lâmpadas | Dano "farol" | unidade | 1 a 2 | 2 | 5 |
-| Cabo de carregamento tipo 2 | Dano "cabo" | unidade | menos de 1 | 1 | 2 |
-| Produtos de limpeza do interior | Dano "interior sujo" ou "estofos" | kit | 2 a 3 | 3 | 10 |
+| Peça | Código | Usada em | Unidade | Consumo estimado por mês | Mínimo | Máximo | Stock inicial | Preço de compra |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Pneu | DN-PNEU | Revisão, dano "pneu" | unidade | 5 a 6 | 8 | 16 | 10 | 85 € |
+| Pastilhas de travão | DN-PAST | Revisão | jogo (um eixo) | 1 a 2 | 3 | 6 | 4 | 45 € |
+| Filtro do habitáculo | DN-FILT | Revisão | unidade | 2 a 3 | 4 | 10 | 5 | 18 € |
+| Escovas limpa-para-brisas | DN-ESCO | Revisão | par | 2 a 3 | 4 | 10 | 5 | 22 € |
+| Líquido de travões DOT 4 | DN-LTRA | Revisão | litro | menos de 1 | 2 | 5 | 3 | 9 € |
+| Líquido limpa-vidros | DN-LVID | Revisão | litro | cerca de 20 | 20 | 60 | 25 | 2 € |
+| Bateria de 12 V | DN-BAT12 | Revisão | unidade | menos de 1 | 1 | 3 | 2 | 120 € |
+| Espelho retrovisor (vidro e capa) | DN-ESPE | Dano "espelho" | unidade | menos de 1 | 1 | 3 | 2 | 60 € |
+| Farolim / lâmpadas | DN-FARO | Dano "farol" | unidade | 1 a 2 | 2 | 5 | 3 | 35 € |
+| Cabo de carregamento tipo 2 | DN-CABO | Dano "cabo" | unidade | menos de 1 | 1 | 2 | 2 | 180 € |
+| Produtos de limpeza do interior | DN-LIMP | Dano "interior sujo" ou "estofos" | kit | 2 a 3 | 3 | 10 | 4 | 15 € |
+
+Os preços de compra são fictícios, sem IVA, e servem para os pedidos de compra e as faturas dos fornecedores. O stock inicial fica um pouco acima do mínimo: assim, a primeira revisão já baixa os pneus para menos do mínimo e mostra a compra automática. No Odoo, o par, o jogo e o kit contam como "Unidades" e os líquidos em litros.
 
 Pressupostos do cálculo:
 
@@ -105,15 +107,15 @@ Fornecedores (contactos fictícios a criar no Odoo):
 
 ## Como fica no Odoo
 
-Tudo fica no mesmo Odoo Community da Frota, com duas apps gratuitas a mais: **Inventário** e **Compras**.
+Tudo fica no mesmo Odoo Community da Frota, com duas apps gratuitas a mais: **Inventário** e **Compras** (as Compras trazem a **Faturação**, onde ficam as faturas dos fornecedores). O módulo `drivenow_oficina` instala estas apps e cria tudo o que está na tabela abaixo; o gestor de frota tem os atalhos em **Frota → Oficina**: Peças em stock, Mínimos e máximos, Compras de peças e Saídas de peças.
 
 | Onde | O que se cria |
 | --- | --- |
-| Inventário → Armazéns | O armazém "Oficina DriveNow" (renomear o que o Odoo cria por omissão) |
+| Inventário → Armazéns | O armazém "Oficina DriveNow", com o código OFI (é o que o Odoo cria por omissão, renomeado) |
 | Inventário → Produtos | As 11 peças, como produtos com controlo de stock, com a unidade da tabela de peças |
 | Produto → separador Compras | O fornecedor de cada peça, o preço e o prazo de entrega |
 | Inventário → Regras de reaprovisionamento | O mínimo e o máximo de cada peça; o Odoo cria os pedidos de cotação sozinho |
-| Inventário → Tipos de operação | "Consumo na oficina", uma saída do armazém com a matrícula do carro na origem |
+| Inventário → Tipos de operação | "Consumo na oficina" (OFI/CON/…), uma saída do armazém para o local "Consumo na oficina", com a matrícula do carro no documento de origem |
 | Contactos | Os dois fornecedores fictícios |
 | Frota → Tipos de serviço | O serviço "Revisão" |
 | Frota → Veículo | O campo novo "km da próxima revisão" (a acrescentar no módulo drivenow\_danos) |
@@ -126,13 +128,14 @@ Por decidir:
 
 - Os mínimos e máximos da tabela de peças, e o pressuposto de 1 500 km por carro por mês.
 - Se a revisão é também obrigatória uma vez por ano, mesmo que o carro não chegue aos 15 000 km.
-- O preço por km de cada modelo, no tarifário da Frota.
 
 Próximos passos:
 
-- [ ] Instalar as apps Inventário e Compras no Odoo
-- [ ] Criar o armazém, as 11 peças, os fornecedores e as regras de mínimo e máximo
-- [ ] Acrescentar o campo "km da próxima revisão" e o serviço "Revisão" na Frota
-- [ ] Fazer o fluxo do n8n que verifica a revisão no fim de cada viagem
-- [ ] Pôr o backend a esconder do mapa os carros com revisão por fazer
+- [x] Instalar as apps Inventário e Compras no Odoo (módulo `drivenow_oficina`)
+- [x] Criar o armazém, as 11 peças, os fornecedores e as regras de mínimo e máximo (módulo `drivenow_oficina`)
+- [x] Acrescentar o campo "km da próxima revisão" e o serviço "Revisão" na Frota (módulo `drivenow_danos`)
+- [x] Pôr o backend a esconder do mapa os carros com revisão por fazer
+- [ ] Separador "Peças usadas" nas ordens de revisão e de reparação, com a saída do stock automática ao concluir
+- [ ] Fazer o fluxo do n8n que verifica a revisão no fim de cada viagem (hoje o backend fá-lo sem o n8n)
+- [ ] Fazer o alerta do n8n ao gestor quando há pedidos de cotação novos
 - [ ] Testar uma revisão completa: bloqueio, saída de peças, nova compra e desbloqueio
